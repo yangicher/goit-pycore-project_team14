@@ -1,4 +1,6 @@
-from models import Birthday, Phone, Name
+from src.models import Birthday, Phone, Name, email
+from src.models.address import Address
+from src.models.email import Email
 
 
 class Record:
@@ -31,6 +33,8 @@ class Record:
     """
 
     def __init__(self, name):
+        self.address = None
+        self.email = None
         self.name = Name(name)
         self.phones = []
         self.birthday = None
@@ -112,3 +116,24 @@ class Record:
             datetime: The birthday of the record.
         """
         return self.birthday
+
+    def add_email(self, email):
+        """
+        Adds an email to the record.
+
+        Args:
+            email (str): The email address to add
+
+        Raises:
+            ValueError: If the email format is invalid
+        """
+        self.email = Email(email)
+
+    def add_address(self, address):
+        """
+        Adds an address to the record.
+
+        Args:
+            address (str): The physical address to add
+        """
+        self.address = Address(address)

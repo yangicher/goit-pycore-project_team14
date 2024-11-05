@@ -25,22 +25,30 @@ class AddressBook(UserDict):
     """
     def add_record(self, record: Record):
         """
-        Adds a record to the address book. If the record's name does not exist in the address book,
-        the record is added. If the record's name already exists, the phone number from the new record
-        is added to the existing contact.
+        Adds a record to the address book.
+        If contact with given name already exists, shows error message.
+        If contact doesn't exist, adds it to the book.
 
         Args:
             record (Record): The record to be added to the address book.
 
+        Returns:
+            bool: True if record was added successfully, False otherwise.
+
         Prints:
-            str: A message indicating whether a new contact was added or an existing contact was updated.
+            str: A message indicating whether the operation was successful or failed.
         """
-        if not self.data.get(record.name.value):
-            self.data[record.name.value] = record
-            print(f"Contact {record.name.value} added.")
-        else:
-            self.data[record.name.value].add_phone(record.phones[0].value)
-            print(f"Phone number {record.phones[0].value} add to the contact {record.name.value}.")
+        name = record.name.value
+
+        # Check if contact already exists
+        if name in self.data:
+            print(f"Error: Contact with name '{name}' already exists!")
+            return False
+
+        # Add new contact
+        self.data[name] = record
+        print(f"Contact {name} added successfully.")
+        return True
 
     def find(self, name: str):
         """

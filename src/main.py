@@ -154,8 +154,12 @@ def add_contact(args, book: AddressBook):
         None
     """
     name, phone = args
+
+    # Create new record
     record = Record(name)
     record.add_phone(phone)
+
+    # Try to add record to the book
     book.add_record(record)
 
 
