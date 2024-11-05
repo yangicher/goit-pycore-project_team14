@@ -4,5 +4,6 @@ from models.phone import Phone
 from models.name import Name
 from models.record import Record
 from models.address_book import AddressBook
+from models.note import Note
 
-__all__ = ["Birthday", "Field", "Phone", "Record", "Name", "AddressBook"]
+__all__ = ["Birthday", "Field", "Phone", "Record", "Name", "AddressBook", "Note"]
