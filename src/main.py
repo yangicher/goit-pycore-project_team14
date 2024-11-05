@@ -28,6 +28,7 @@ COMMAND_NAMES = {
     "add-birthday": "add-birthday",
     "show-birthday": "show-birthday",
     "birthdays": "birthdays",
+    "add-address": "add-address"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -110,6 +111,8 @@ def input_error(command_name):
                         return f"Error in '{command_name}' command: Enter user name and birthday."
                     case "show-birthday":
                         return f"Error in '{command_name}' command: Enter user name."
+                    case "add-address":
+                        return f"Error in '{command_name}' command: Enter contact name and address."
                     case _:
                         return f"Error in '{command_name}' command: Invalid input."
             except IndexError:
@@ -274,6 +277,16 @@ def birthdays(book: AddressBook):
         print("No upcoming birthdays.")
 
 
+@input_error(COMMAND_NAMES['add-address'])
+def add_address(args, book: AddressBook) -> None:
+    name, address = args
+    record: Record | None = book.find(name)
+    if not record:
+        return f"Contact {name} not found."
+    record.add_address(address)
+    print(f'Address added for {record.name}')
+
+
 def main():
     """
     The main function of the assistant bot. It initializes the AddressBook and
@@ -323,6 +336,8 @@ def main():
                         show_birthday(args, book)
                     case "birthdays":
                         birthdays(book)
+                    case "add-address":
+                        print(add_address(args, book))
                     case "help":
                         print(COMMANDS)
             else:
