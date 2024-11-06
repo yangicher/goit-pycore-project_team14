@@ -1,4 +1,4 @@
-from models import Birthday, Phone, Name, Address
+from models import Birthday, Phone, Name, Address, email
 
 
 class Record:
@@ -53,13 +53,13 @@ class Record:
         phone = Phone(phone_number)
         self.phones.append(phone)
 
-    def add_email(self, email):
+    def add_email(self, value):
         """
         Adds an email to the record.
         Args:
-            email (str): The email address to be added.
+            value (str): The email address to be added.
         """
-        self.email = Email(email)
+        self.email = email.Email(value)
 
     def add_address(self, address):
         """
@@ -78,7 +78,7 @@ class Record:
             new_email (str): The new email address.
         """
 
-        self.email = Email(new_email)
+        self.email = email.Email(new_email)
         print(f"Email changed to {new_email}.")
 
     def edit_address(self, new_address):

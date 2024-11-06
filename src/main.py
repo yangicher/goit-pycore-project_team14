@@ -28,6 +28,7 @@ COMMAND_NAMES = {
     "phone": "phone",
     "all": "all",
     "help": "help",
+    "hello": "hello",
     "close": "close",
     "exit": "exit",
     "add-birthday": "add-birthday",
@@ -217,7 +218,7 @@ def get_phone(args, book: AddressBook):
     Returns:
         None
     """
-    name = args[0]
+    name = args
     record: Record = book.find(name)
     phones = record.get_all_phones()
     print(f"Phones of {name}:")
@@ -275,7 +276,7 @@ def show_birthday(args, book: AddressBook):
         None: This function prints the birthday of the contact if found,
               otherwise it prints a message indicating the contact was not found.
     """
-    name = args[0]
+    name = args
     record = book.find(name)
     if record:
         birthday = record.show_birthdays()
@@ -296,7 +297,7 @@ def birthdays(args, book: AddressBook):
     If there are no upcoming birthdays, it prints a message indicating so.
     """
 
-    lookup_days = int(args[0])
+    lookup_days = int(args)
 
     upcoming = book.get_upcoming_birthdays(lookup_days)
     if len(upcoming) > 0:
