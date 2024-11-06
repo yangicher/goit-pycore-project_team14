@@ -122,3 +122,12 @@ class Record:
             address (str): The home address in the string format.
         '''
         self.address = Address(address)
+
+    def change_address(self, new_address: str) -> None:
+        '''
+        Change exiting address to the record.
+
+        Args:
+            new_address (str): The home address in the string format.
+        '''
+        self.address = Address(new_address)
