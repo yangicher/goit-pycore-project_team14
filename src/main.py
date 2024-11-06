@@ -405,7 +405,6 @@ def main():
 
     try:
         book = load_data()
-        print(book.find_note_by_title('check note'))
         print("Welcome to the assistant bot!")
         while True:
             user_input = input(f"{Style.RESET_ALL}Enter a command: ")

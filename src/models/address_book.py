@@ -10,7 +10,7 @@ WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 class AddressBook(UserDict):
     def __init__(self):
         super().__init__()
-        self.data["notes"] = [Note("test", "test note data"), Note("check note", "check note data")]
+        self.data["notes"] = []
 
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
