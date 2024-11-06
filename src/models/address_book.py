@@ -1,6 +1,6 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-from models import Record
+from models import Record, Note
 
 DATE_FORMAT = "%d.%m.%Y"
 DAYS_IN_WEEK = 7
@@ -8,7 +8,7 @@ WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 
 class AddressBook(UserDict):
     def __init__(self):
-        self.data['notes'] = []
+        self.data['notes'] = [Note('test', 'test note data'), Note('check note', 'check note data')]
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
 
@@ -111,7 +111,7 @@ class AddressBook(UserDict):
         return upcoming_birthdays
     
     def find_notes_by_tittle(self, note_tittle: str) -> list:
-        result = []
-        for note in self.data['notes']:
-            pass
+        return [note for note in self.data['notes'] if note_tittle in note.tittle]
+        
+            
         

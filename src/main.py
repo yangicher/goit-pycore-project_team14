@@ -297,7 +297,7 @@ def main():
 
     try:
         book = load_data()
-        print(book.notes)
+        print(book.data['notes'])
         print("Welcome to the assistant bot!")
         while True:
             user_input = input(f"{Style.RESET_ALL}Enter a command: ")
