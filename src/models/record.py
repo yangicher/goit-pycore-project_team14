@@ -1,4 +1,4 @@
-from models import Birthday, Phone, Name
+from models import Birthday, Phone, Name, Address
 
 
 class Record:
@@ -34,9 +34,10 @@ class Record:
         self.name = Name(name)
         self.phones = []
         self.birthday = None
+        self.address = None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday}, address: {self.address}"
 
     def add_phone(self, phone_number: Phone):
         """
@@ -112,3 +113,12 @@ class Record:
             datetime: The birthday of the record.
         """
         return self.birthday
+    
+    def add_address(self, address: str) -> None:
+        '''
+        Adds a address to the record.
+
+        Args:
+            address (str): The home address in the string format.
+        '''
+        self.address = Address(address)
