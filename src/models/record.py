@@ -1,4 +1,4 @@
-from models import Birthday, Phone, Name
+from models import Birthday, Phone, Name, Address, email
 
 
 class Record:
@@ -34,9 +34,11 @@ class Record:
         self.name = Name(name)
         self.phones = []
         self.birthday = None
+        self.email = None
+        self.address = None
 
     def __str__(self):
-        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday}"
+        return f"Contact name: {self.name.value}, phones: {'; '.join(p.value for p in self.phones)}, birthday: {self.birthday}, email: {self.email}, address: {self.address}"
 
     def add_phone(self, phone_number: Phone):
         """
@@ -50,6 +52,44 @@ class Record:
         """
         phone = Phone(phone_number)
         self.phones.append(phone)
+
+    def add_email(self, value):
+        """
+        Adds an email to the record.
+        Args:
+            value (str): The email address to be added.
+        """
+        self.email = email.Email(value)
+
+    def add_address(self, address):
+        """
+        Adds an address to the record.
+
+        Args:
+            address (str): The physical address to be added.
+        """
+        self.address = Address(address)
+
+    def edit_email(self, new_email):
+        """
+        Edits the email address in the record.
+
+        Args:
+            new_email (str): The new email address.
+        """
+
+        self.email = email.Email(new_email)
+        print(f"Email changed to {new_email}.")
+
+    def edit_address(self, new_address):
+        """
+        Edits the address in the record.
+
+        Args:
+            new_address (str): The new physical address.
+        """
+        self.address = Address(new_address)
+        print(f"Address changed to {new_address}.")
 
     def edit_phone(self, current_phone, new_phone):
         """
@@ -112,3 +152,21 @@ class Record:
             datetime: The birthday of the record.
         """
         return self.birthday
+    
+    def add_address(self, address: str) -> None:
+        '''
+        Adds a address to the record.
+
+        Args:
+            address (str): The home address in the string format.
+        '''
+        self.address = Address(address)
+
+    def change_address(self, new_address: str) -> None:
+        '''
+        Change exiting address to the record.
+
+        Args:
+            new_address (str): The home address in the string format.
+        '''
+        self.address = Address(new_address)
