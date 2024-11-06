@@ -6,7 +6,6 @@ DATE_FORMAT = "%d.%m.%Y"
 DAYS_IN_WEEK = 7
 WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 
-
 class AddressBook(UserDict):
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
@@ -14,30 +13,30 @@ class AddressBook(UserDict):
     Methods:
         add_record(record: Record):
             Adds a new contact record to the address book. If the contact already exists, adds a phone number to the existing contact.
-
+        
         find(name: str):
             Finds and returns a contact record by name. Returns None if the contact is not found.
-
+        
         delete(name: str):
             Deletes a contact record by name. Prints a message if the contact is not found.
-
+        
         get_upcoming_birthdays():
             Returns a list of contacts with upcoming birthdays within the next week. Adjusts for weekends.
     """
-
     def add_record(self, record: Record):
         """
-        Adds a record to the address book. If the record's name does not exist in the address book,
-        the record is added. If the record's name already exists, the phone number from the new record
-        is added to the existing contact.
+        Adds a record to the address book.
 
         Args:
             record (Record): The record to be added to the address book.
 
-        Prints:
-            str: A message indicating whether a new contact was added or an existing contact was updated.
+        Raises:
+            ValueError: If a contact with the given name already exists.
         """
-        if not self.data.get(record.name.value):
+        if record.name.value in self.data:
+            raise ValueError(f"Contact with name '{record.name.value}' already exists.")
+
+        elif not self.data.get(record.name.value):
             self.data[record.name.value] = record
             print(f"Contact {record.name.value} added.")
         else:

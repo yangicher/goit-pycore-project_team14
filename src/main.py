@@ -182,10 +182,13 @@ def add_contact(args, book: AddressBook):
     Returns:
         None
     """
-    name, phone = args
-    record = Record(name)
-    record.add_phone(phone)
-    book.add_record(record)
+    try:
+        name, phone = args
+        record = Record(name)
+        record.add_phone(phone)
+        book.add_record(record)
+    except ValueError as e:
+        print(str(e))
 
 
 @input_error(COMMAND_NAMES["change"])
