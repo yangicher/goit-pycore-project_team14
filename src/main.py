@@ -14,11 +14,10 @@ COMMANDS = """
     - add-birthday <name> <birthday>: Add a birthday to a contact.
     - show-birthday: <name> : Show the birthday of a contact.
     - birthdays: <days_lookup> Show all birthdays from today to days_lookup.
-    - birthdays: Show all birthdays.
     - add-email <name> <email>: Add an email to a contact.
     - change-email <name> <email>: Change the email of a contact.
     - add-address <name> <address>: Add an address to a contact.
-    - change-address <name> <address>: Change the address of a contact.
+    - change-address <name> <address>: Change an address for a contact
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -37,7 +36,7 @@ COMMAND_NAMES = {
     "add-email": "add-email",
     "change-email": "change-email",
     "add-address": "add-address",
-    "change-address": "change-address",
+    "change-address": "change-address"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -101,6 +100,8 @@ def input_error(command_name):
         - "phone": Error message for retrieving a phone number with missing user name.
         - "add-birthday": Error message for adding a birthday with missing user name or birthday.
         - "show-birthday": Error message for showing a birthday with missing user name.
+        - "add-address": Error message for adding an address with missing user name or address.
+        - "change-address": Error message for changing an address with missing name or address.
         - Default: Error message for invalid input.
     """
 
@@ -126,6 +127,10 @@ def input_error(command_name):
                         )
                     case "show-birthday":
                         print(f"Error in '{command_name}' command: Enter user name.")
+                    case "add-address":
+                        return f"Error in '{command_name}' command: Enter contact name and address."
+                    case "change-address":
+                        print(f"Error in '{command_name}' command: Enter contact name and address.")
                     case "birthdays":
                         print(
                             f"Error in '{command_name}' command: Enter user lookup days."
@@ -352,6 +357,28 @@ def change_address(args, book: AddressBook):
         print(f"Contact {name} not found.")
 
 
+@input_error(COMMAND_NAMES['add-address'])
+def add_address(args, book: AddressBook) -> str:
+    name, address = args
+    record: Record | None = book.find(name)
+    if not record:
+        return f"Contact {name} not found."
+    record.add_address(address)
+    return f'Address added for {record.name}'
+
+
+@input_error(COMMAND_NAMES["change-address"])
+def change_address(args, book: AddressBook) -> str:
+    name, address = args
+    record: Record | None = book.find(name)
+    if not record:
+        return f'Contact {name} not found.'
+    elif not record.address:
+        return f'There are not addresses for {record.name}'
+    record.change_address(address)
+    return f'Address for {name} changed.'
+
+
 def main():
     """
     The main function of the assistant bot. It initializes the AddressBook and
@@ -367,6 +394,8 @@ def main():
         - "add-birthday": Adds a birthday to a contact.
         - "show-birthday": Shows the birthday of a contact.
         - "birthdays": Lists upcoming birthdays.
+        - "add-address": Adds address to a contact.
+        - "change-address": Change exiting address to a contact.
         - "help": Displays a list of available commands.
 
     If an invalid command is entered, an error message is displayed and the user
@@ -401,15 +430,14 @@ def main():
                         show_birthday(args, book)
                     case "birthdays":
                         birthdays(args, book)
-                        birthdays(book)
                     case "add-email":
                         add_email(args, book)
                     case "change-email":
                         change_email(args, book)
                     case "add-address":
-                        add_address(args, book)
+                        print(add_address(args, book))
                     case "change-address":
-                        change_address(args, book)
+                        print(change_address(args, book))
                     case "help":
                         print(COMMANDS)
             else:

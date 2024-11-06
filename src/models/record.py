@@ -1,4 +1,4 @@
-from models import Birthday, Phone, Name
+from models import Birthday, Phone, Name, Address
 
 
 class Record:
@@ -152,3 +152,21 @@ class Record:
             datetime: The birthday of the record.
         """
         return self.birthday
+    
+    def add_address(self, address: str) -> None:
+        '''
+        Adds a address to the record.
+
+        Args:
+            address (str): The home address in the string format.
+        '''
+        self.address = Address(address)
+
+    def change_address(self, new_address: str) -> None:
+        '''
+        Change exiting address to the record.
+
+        Args:
+            new_address (str): The home address in the string format.
+        '''
+        self.address = Address(new_address)
