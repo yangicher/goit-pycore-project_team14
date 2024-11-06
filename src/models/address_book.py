@@ -7,6 +7,8 @@ DAYS_IN_WEEK = 7
 WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 
 class AddressBook(UserDict):
+    def __init__(self):
+        self.data['notes'] = []
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
 
@@ -107,3 +109,9 @@ class AddressBook(UserDict):
                 )
 
         return upcoming_birthdays
+    
+    def find_notes_by_tittle(self, note_tittle: str) -> list:
+        result = []
+        for note in self.data['notes']:
+            pass
+        
