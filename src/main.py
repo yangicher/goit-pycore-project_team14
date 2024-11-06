@@ -1,5 +1,6 @@
-from colorama import Fore, Style
 import pickle
+
+from colorama import Fore, Style
 
 from models import AddressBook, Record
 
@@ -12,7 +13,7 @@ COMMANDS = """
     - all: List all contacts.
     - add-birthday <name> <birthday>: Add a birthday to a contact.
     - show-birthday: <name> : Show the birthday of a contact.
-    - birthdays: Show all birthdays.
+    - birthdays: <days_lookup> Show all birthdays from today to days_lookup.
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -102,25 +103,39 @@ def input_error(command_name):
             except ValueError:
                 match command_name:
                     case "add":
-                        return f"Error in '{command_name}' command: Give me a name and a phone number."
+                        print(
+                            f"Error in '{command_name}' command: Give me a name and a phone number."
+                        )
                     case "change":
-                        return f"Error in '{command_name}' command: Give me a name and a phone number."
+                        print(
+                            f"Error in '{command_name}' command: Give me a name and a phone number."
+                        )
                     case "phone":
-                        return f"Error in '{command_name}' command: Enter user nam."
+                        print(f"Error in '{command_name}' command: Enter user name.")
                     case "add-birthday":
-                        return f"Error in '{command_name}' command: Enter user name and birthday."
+                        print(
+                            f"Error in '{command_name}' command: Enter user name and birthday."
+                        )
                     case "show-birthday":
-                        return f"Error in '{command_name}' command: Enter user name."
+                        print(f"Error in '{command_name}' command: Enter user name.")
                     case "add-address":
-                        return f"Error in '{command_name}' command: Enter contact name and address."
+                        print(f"Error in '{command_name}' command: Enter contact name and address.")
+                    case "birthdays":
+                        print(
+                            f"Error in '{command_name}' command: Enter user lookup days."
+                        )
                     case _:
-                        return f"Error in '{command_name}' command: Invalid input."
+                        return print(
+                            f"Error in '{command_name}' command: Invalid input."
+                        )
             except IndexError:
-                return (
+
+                print(
                     f"Error in '{command_name}' command: Not enough arguments provided."
                 )
+
             except KeyError:
-                return (
+                print(
                     f"Error in '{command_name}' command: Contact {args[0]} not found."
                 )
 
@@ -258,7 +273,8 @@ def show_birthday(args, book: AddressBook):
         print(f"Contact {name} not found.")
 
 
-def birthdays(book: AddressBook):
+@input_error(COMMAND_NAMES["birthdays"])
+def birthdays(args, book: AddressBook):
     """
     Prints the upcoming birthdays from the given AddressBook.
 
@@ -268,7 +284,10 @@ def birthdays(book: AddressBook):
     The function retrieves the upcoming birthdays from the AddressBook instance and prints them.
     If there are no upcoming birthdays, it prints a message indicating so.
     """
-    upcoming = book.get_upcoming_birthdays()
+
+    lookup_days = int(args[0])
+
+    upcoming = book.get_upcoming_birthdays(lookup_days)
     if len(upcoming) > 0:
         print("Upcoming birthdays:")
         for birthday in upcoming:
@@ -335,7 +354,7 @@ def main():
                     case "show-birthday":
                         show_birthday(args, book)
                     case "birthdays":
-                        birthdays(book)
+                        birthdays(args, book)
                     case "add-address":
                         print(add_address(args, book))
                     case "help":
@@ -344,7 +363,7 @@ def main():
                 print(
                     f"{Fore.RED}Invalid command.\n{Style.RESET_ALL}To see all commands available type 'help'"
                 )
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, EOFError):
         save_data(book)
         print("\nGood bye!")
 
