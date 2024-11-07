@@ -14,6 +14,11 @@ COMMANDS = """
     - add-birthday <name> <birthday>: Add a birthday to a contact.
     - show-birthday: <name> : Show the birthday of a contact.
     - birthdays: <days_lookup> Show all birthdays from today to days_lookup.
+    - add-note <title> <content>: Add a new note.
+    - show-notes: Show all notes.
+    - delete-note <title>: Delete a note by title.
+    - edit-note <title> <new_content>: Edit an existing note.
+    - find-notes <query>: Search notes by title or content.
     - add-email <name> <email>: Add an email to a contact.
     - change-email <name> <email>: Change the email of a contact.
     - add-address <name> <address>: Add an address to a contact.
@@ -39,7 +44,12 @@ COMMAND_NAMES = {
     "change-email": "change-email",
     "add-address": "add-address",
     "change-address": "change-address",
-    "add-phone": "add-phone",
+    "add-note": "add-note",
+    "show-notes": "show-notes",
+    "delete-note": "delete-note",
+    "edit-note": "edit-note",
+    "find-notes": "find-notes"
+    "add-phone": "add-phone"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -395,6 +405,55 @@ def add_phone(args, book: AddressBook):
     else:
         print(f"Contact {name} not found.")
 
+@input_error(COMMAND_NAMES["add-note"])
+def add_note(args, book: AddressBook):
+    """Add a new note to the address book."""
+    try:
+        title = args[0]
+        content = " ".join(args[1:])
+        book.add_note(title, content)
+    except IndexError:
+        print(f"Error: Give me a title and content for the note.")
+    except ValueError as e:
+        print(str(e))
+
+@input_error(COMMAND_NAMES["show-notes"])
+def show_notes(args, book: AddressBook):
+    """Show all notes in the address book."""
+    book.show_notes()
+
+@input_error(COMMAND_NAMES["delete-note"])
+def delete_note(args, book: AddressBook):
+    """Delete a note by its title."""
+    try:
+        title = args[0]
+        book.delete_note_by_title(title)
+    except IndexError:
+        print(f"Error: Give me a title of the note to delete.")
+    except ValueError as e:
+        print(str(e))
+
+@input_error(COMMAND_NAMES["edit-note"])
+def edit_note(args, book: AddressBook):
+    """Edit an existing note."""
+    try:
+        title = args[0]
+        new_content = " ".join(args[1:])
+        book.edit_note(title, new_content)
+    except IndexError:
+        print(f"Error: Give me a title and new content for the note.")
+    except ValueError as e:
+        print(str(e))
+
+@input_error(COMMAND_NAMES["find-notes"])
+def find_notes(args, book: AddressBook):
+    """Search notes by query."""
+    try:
+        query = " ".join(args)
+        book.find_notes(query)
+    except IndexError:
+        print(f"Error: Give me a search query.")
+
 
 def main():
     """
@@ -455,9 +514,19 @@ def main():
                     case "add-address":
                         add_address(args, book)
                     case "change-address":
-                        change_address(args, book)
+                        print(change_address(args, book))
                     case "add-phone":
                         add_phone(args, book)
+                    case "add-note":
+                        add_note(args, book)
+                    case "show-notes":
+                        show_notes(args, book)
+                    case "delete-note":
+                        delete_note(args, book)
+                    case "edit-note":
+                        edit_note(args, book)
+                    case "find-notes":
+                        find_notes(args, book)
                     case "help":
                         print(COMMANDS)
             else:
