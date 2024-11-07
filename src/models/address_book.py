@@ -1,6 +1,6 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-from models import Record
+from models import Record, Note
 
 from models.notes import Note
 
@@ -165,3 +165,12 @@ class AddressBook(UserDict):
         else:
             for note in found_notes:
                 print(note)
+    
+    def find_note_by_title(self, note_title: str) -> Note | None:
+        """
+        Get single note from notes list by it's title.
+        """
+        for note in self.data['notes']:
+            if note.title == note_title:
+                return note
+        return None
