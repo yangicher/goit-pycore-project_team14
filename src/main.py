@@ -1,6 +1,6 @@
 import pickle
 
-from colorama import Fore,   Style
+from colorama import Fore, Style
 
 from models.address_book import AddressBook
 from models.record import Record
@@ -509,7 +509,6 @@ def main():
 
     try:
         book = load_data()
-        print(book.data)
         print("Welcome to the assistant bot!")
         while True:
             user_input = input(f"{Style.RESET_ALL}Enter a command: ")
