@@ -64,7 +64,7 @@ class Note(Field):
             raise TagNotFound()
         self.tags = [tag for tag in self.tags if tag.value != tag_to_remove]
 
-    def __show_tags(self):
+    def __get_tags_str(self):
         result_str = '\nTags:'
         for tag in self.tags:
             result_str += f'\n{tag.value}'
@@ -72,4 +72,4 @@ class Note(Field):
 
     def __str__(self):
         formatted_date = self.creation_date.strftime("%Y-%m-%d %H:%M:%S")
-        return f"{self.title.upper()} created at {formatted_date}\n\n{self.value}{self.__show_tags()}"
+        return f"{self.title.upper()} created at {formatted_date}\n\n{self.value}{self.__get_tags_str()}"
