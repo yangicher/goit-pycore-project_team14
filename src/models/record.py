@@ -1,5 +1,8 @@
-from models import Birthday, Phone, Name, Address, email
-
+from models.name import Name
+from models.phone import Phone
+from models.birthday import Birthday
+from models.address import Address
+from models.email import Email
 
 class Record:
     """
@@ -59,7 +62,7 @@ class Record:
         Args:
             value (str): The email address to be added.
         """
-        self.email = email.Email(value)
+        self.email = Email(value)
 
     def add_address(self, address):
         """
@@ -78,7 +81,7 @@ class Record:
             new_email (str): The new email address.
         """
 
-        self.email = email.Email(new_email)
+        self.email = Email(new_email)
         print(f"Email changed to {new_email}.")
 
     def edit_address(self, new_address):

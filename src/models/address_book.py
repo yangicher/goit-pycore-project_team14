@@ -1,6 +1,9 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-from models import Record, Note
+
+from models.note import Note
+from models.record import Record
+
 
 DATE_FORMAT = "%d.%m.%Y"
 DAYS_IN_WEEK = 7
@@ -8,10 +11,6 @@ WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 
 
 class AddressBook(UserDict):
-    def __init__(self):
-        super().__init__()
-        self.data["notes"] = []
-
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
 
@@ -28,6 +27,10 @@ class AddressBook(UserDict):
         get_upcoming_birthdays():
             Returns a list of contacts with upcoming birthdays within the next week. Adjusts for weekends.
     """
+    def __init__(self):
+        super().__init__()
+        self.notes = {}
+
 
     def add_record(self, record: Record):
         """
@@ -119,6 +122,51 @@ class AddressBook(UserDict):
                     )
 
         return upcoming_birthdays
+
+    def add_note(self, title: str, content: str):
+        """Add a new note to the address book."""
+        if title in self.notes:
+            raise ValueError(f"Note with title '{title}' already exists")
+        self.notes[title] = Note(title, content)
+        print(f"Note '{title}' added successfully")
+
+    def show_notes(self):
+        """Show all notes in the address book."""
+        if not self.notes:
+            print("No notes found")
+            return
+
+        for note in self.notes.values():
+            print(note)
+
+    def delete_note_by_title(self, title: str):
+        """Delete a note by its title."""
+        if title not in self.notes:
+            raise ValueError(f"Note with title '{title}' not found")
+
+        del self.notes[title]
+        print(f"Note '{title}' deleted successfully")
+
+    def edit_note(self, title: str, new_content: str):
+        """Edit the content of an existing note."""
+        if title not in self.notes:
+            raise ValueError(f"Note with title '{title}' not found")
+
+        self.notes[title].value = new_content  # Обновляем значение value, а не content
+        print(f"Note '{title}' updated successfully")
+
+    def find_notes(self, query: str):
+        """Search notes by title or content."""
+        found_notes = []
+        for note in self.notes.values():
+            if query.lower() in note.title.lower() or query.lower() in note.value.lower():
+                found_notes.append(note)
+
+        if not found_notes:
+            print(f"No notes found matching '{query}'")
+        else:
+            for note in found_notes:
+                print(note)
     
     def find_note_by_title(self, note_title: str) -> Note | None:
         """
@@ -128,6 +176,3 @@ class AddressBook(UserDict):
             if note.title == note_title:
                 return note
         return None
-        
-            
-        

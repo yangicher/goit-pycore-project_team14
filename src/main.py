@@ -2,7 +2,10 @@ import pickle
 
 from colorama import Fore, Style
 
-from models import AddressBook, Record, Note, TagDuplicateError, TagNotFound, TagValidationError
+from models.address_book import AddressBook
+from models.record import Record
+from models.note import Note
+from models.tag import TagDuplicateError, TagNotFound, TagValidationError
 
 COMMANDS = """
     Available commands:
@@ -14,6 +17,11 @@ COMMANDS = """
     - add-birthday <name> <birthday>: Add a birthday to a contact.
     - show-birthday: <name> : Show the birthday of a contact.
     - birthdays: <days_lookup> Show all birthdays from today to days_lookup.
+    - add-note <title> <content>: Add a new note.
+    - show-notes: Show all notes.
+    - delete-note <title>: Delete a note by title.
+    - edit-note <title> <new_content>: Edit an existing note.
+    - find-notes <query>: Search notes by title or content.
     - add-email <name> <email>: Add an email to a contact.
     - change-email <name> <email>: Change the email of a contact.
     - add-address <name> <address>: Add an address to a contact.
@@ -40,6 +48,11 @@ COMMAND_NAMES = {
     "change-email": "change-email",
     "add-address": "add-address",
     "change-address": "change-address",
+    "add-note": "add-note",
+    "show-notes": "show-notes",
+    "delete-note": "delete-note",
+    "edit-note": "edit-note",
+    "find-notes": "find-notes",
     "add-phone": "add-phone",
     "add-tag": "add-tag"
 }
@@ -122,11 +135,7 @@ def input_error(command_name):
                 return 'Entered tag not found.'
             except ValueError:
                 match command_name:
-                    case "add":
-                        print(
-                            f"Error in '{command_name}' command: Give me a name and a phone number."
-                        )
-                    case "change":
+                    case ("add", "change"):
                         print(
                             f"Error in '{command_name}' command: Give me a name and a phone number."
                         )
@@ -138,11 +147,7 @@ def input_error(command_name):
                         )
                     case "show-birthday":
                         print(f"Error in '{command_name}' command: Enter user name.")
-                    case "add-address":
-                        print(
-                            f"Error in '{command_name}' command: Enter contact name and address."
-                        )
-                    case "change-address":
+                    case ("add-address", "change-address"):
                         print(
                             f"Error in '{command_name}' command: Enter contact name and address."
                         )
@@ -154,10 +159,26 @@ def input_error(command_name):
                         print(
                             f"Error in '{command_name}' command: Enter contact name and phone."
                         )
-                    case _:
-                        return print(
-                            f"Error in '{command_name}' command: Invalid input."
+                    case ("add-email", "change-email"):
+                        print(
+                            f"Error in '{command_name}' command: Enter contact name and email."
                         )
+
+                    case ("add-note", "edit-note"):
+                        print(
+                            f"Error in '{command_name}' command: Enter note title ant content"
+                        )
+                    case "delete-note":
+                        print(
+                            f"Error in '{command_name}' command: Enter note title to delete"
+                        )
+
+                    case "find-notes":
+                        print(
+                            f"Error in '{command_name}' command: Enter query to search notes"
+                        )
+                    case _:
+                        print(f"Error in '{command_name}' command: Invalid input.")
             except IndexError:
 
                 print(
@@ -330,30 +351,26 @@ def birthdays(args, book: AddressBook):
 @input_error(COMMAND_NAMES["add-email"])
 def add_email(args, book: AddressBook):
     """Add an email to a contact."""
-    try:
-        name, email = args
-        record = book.find(name)
-        if record:
-            record.add_email(email)
-            print(f"Email {email} added to {name}.")
-        else:
-            print(f"Contact {name} not found.")
-    except ValueError as e:
-        print(str(e))
+
+    name, email = args
+    record = book.find(name)
+    if record:
+        record.add_email(email)
+        print(f"Email {email} added to {name}.")
+    else:
+        print(f"Contact {name} not found.")
 
 
 @input_error(COMMAND_NAMES["change-email"])
 def change_email(args, book: AddressBook):
     """Change the email of a contact."""
-    try:
-        name, email = args
-        record = book.find(name)
-        if record:
-            record.edit_email(email)
-        else:
-            print(f"Contact {name} not found.")
-    except ValueError as e:
-        print(str(e))
+
+    name, email = args
+    record = book.find(name)
+    if record:
+        record.edit_email(email)
+    else:
+        print(f"Contact {name} not found.")
 
 
 @input_error(COMMAND_NAMES["add-address"])
@@ -412,6 +429,46 @@ def add_tag(args, book: AddressBook):
         return 'Note not found.'
     note.add_tag(tag)
     return f'Tag added to note.'
+
+@input_error(COMMAND_NAMES["add-note"])
+def add_note(args, book: AddressBook):
+    """Add a new note to the address book."""
+
+    title = args[0]
+    content = " ".join(args[1:])
+    book.add_note(title, content)
+
+
+@input_error(COMMAND_NAMES["show-notes"])
+def show_notes(book: AddressBook):
+    """Show all notes in the address book."""
+    book.show_notes()
+
+
+@input_error(COMMAND_NAMES["delete-note"])
+def delete_note(args, book: AddressBook):
+    """Delete a note by its title."""
+    
+    title = args[0]
+    book.delete_note_by_title(title)
+
+
+@input_error(COMMAND_NAMES["edit-note"])
+def edit_note(args, book: AddressBook):
+    """Edit an existing note."""
+
+    title = args[0]
+    new_content = " ".join(args[1:])
+    book.edit_note(title, new_content)
+
+
+@input_error(COMMAND_NAMES["find-notes"])
+def find_notes(args, book: AddressBook):
+    """Search notes by query."""
+
+    query = " ".join(args)
+    book.find_notes(query)
+
 
 def main():
     """
@@ -474,9 +531,19 @@ def main():
                     case "add-address":
                         add_address(args, book)
                     case "change-address":
-                        change_address(args, book)
+                        print(change_address(args, book))
                     case "add-phone":
                         add_phone(args, book)
+                    case "add-note":
+                        add_note(args, book)
+                    case "show-notes":
+                        show_notes(book)
+                    case "delete-note":
+                        delete_note(args, book)
+                    case "edit-note":
+                        edit_note(args, book)
+                    case "find-notes":
+                        find_notes(args, book)
                     case "add-tag":
                         print(add_tag(args, book))
                     case "help":
