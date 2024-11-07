@@ -1,4 +1,4 @@
-from src.models.field import Field
+from models.field import Field
 
 class Note(Field):
     """

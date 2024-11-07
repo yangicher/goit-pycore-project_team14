@@ -48,7 +48,7 @@ COMMAND_NAMES = {
     "show-notes": "show-notes",
     "delete-note": "delete-note",
     "edit-note": "edit-note",
-    "find-notes": "find-notes"
+    "find-notes": "find-notes",
     "add-phone": "add-phone"
 }
 
