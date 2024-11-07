@@ -1,6 +1,6 @@
 import re
 
-from models import Field
+from models.field import Field
 
 PATTERN = r"^\d{10}$"
 

@@ -1,8 +1,9 @@
 from collections import UserDict
 from datetime import datetime, timedelta
-from models import Record, Note
 
-from models.notes import Note
+from models.note import Note
+from models.record import Record
+
 
 DATE_FORMAT = "%d.%m.%Y"
 DAYS_IN_WEEK = 7
@@ -10,9 +11,6 @@ WEEKEND_DAYS = [5, 6]  # Saturday and Sunday
 
 
 class AddressBook(UserDict):
-    def __init__(self):
-        super().__init__()
-        self.notes = {}
     """
     AddressBook is a specialized dictionary for storing and managing contact records.
 
@@ -29,6 +27,10 @@ class AddressBook(UserDict):
         get_upcoming_birthdays():
             Returns a list of contacts with upcoming birthdays within the next week. Adjusts for weekends.
     """
+    def __init__(self):
+        super().__init__()
+        self.notes = {}
+
 
     def add_record(self, record: Record):
         """
