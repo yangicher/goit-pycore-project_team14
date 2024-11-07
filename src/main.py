@@ -42,7 +42,7 @@ COMMAND_NAMES = {
     "add-email": "add-email",
     "change-email": "change-email",
     "add-address": "add-address",
-    "change-address": "change-address"
+    "change-address": "change-address",
     "add-note": "add-note",
     "show-notes": "show-notes",
     "delete-note": "delete-note",
