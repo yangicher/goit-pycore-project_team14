@@ -1,6 +1,6 @@
 import pickle
 
-from colorama import Fore, Style
+from colorama import Fore,   Style
 
 from models.address_book import AddressBook
 from models.record import Record
@@ -28,6 +28,7 @@ COMMANDS = """
     - change-address <name> <address>: Change an address for a contact
     - add-phone <name> <phone>: Add a phone to a contact.
     - add-tag <note title> <tag>: Add tag to a note.
+    - remove-tag <note title> <tag>: Removing exiting tag from note.
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -54,7 +55,8 @@ COMMAND_NAMES = {
     "edit-note": "edit-note",
     "find-notes": "find-notes",
     "add-phone": "add-phone",
-    "add-tag": "add-tag"
+    "add-tag": "add-tag",
+    "remove-tag": "remove-tag"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -130,7 +132,7 @@ def input_error(command_name):
             except TagValidationError:
                 return 'Tag can only include latin chars, numbers and underscore ("_")'
             except TagDuplicateError:
-                return 'This note alredy include this tag.'
+                return 'This note alredy include entered tag.'
             except TagNotFound:
                 return 'Entered tag not found.'
             except ValueError:
@@ -421,14 +423,6 @@ def add_phone(args, book: AddressBook):
     else:
         print(f"Contact {name} not found.")
 
-@input_error
-def add_tag(args, book: AddressBook):
-    note_title, tag = args
-    note: Note | None = book.find_note_by_title(note_title)
-    if not note:
-        return 'Note not found.'
-    note.add_tag(tag)
-    return f'Tag added to note.'
 
 @input_error(COMMAND_NAMES["add-note"])
 def add_note(args, book: AddressBook):
@@ -469,6 +463,24 @@ def find_notes(args, book: AddressBook):
     query = " ".join(args)
     book.find_notes(query)
 
+
+@input_error(COMMAND_NAMES["add-tag"])
+def add_tag(args, book: AddressBook) -> str:
+    note_title, tag = args
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return 'Note not found.'
+    note.add_tag(tag)
+    return f'Tag {tag} added to note {note_title}.'
+
+@input_error(COMMAND_NAMES["remove-tag"])
+def remove_tag(args, book: AddressBook) -> str:
+    note_title, tag = args
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return 'Note not found'
+    note.remove_tag(tag)
+    return f"Tag '{tag}' removed from note '{note.title}'"
 
 def main():
     """
@@ -546,6 +558,8 @@ def main():
                         find_notes(args, book)
                     case "add-tag":
                         print(add_tag(args, book))
+                    case "remove-tag":
+                        print(remove_tag(args, book))
                     case "help":
                         print(COMMANDS)
             else:

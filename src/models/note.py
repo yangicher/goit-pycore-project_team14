@@ -1,6 +1,6 @@
 from datetime import datetime
 from models.field import Field
-from models import Tag, TagDuplicateError, TagNotFound
+from models.tag import Tag, TagDuplicateError, TagNotFound, auto_add_hashtag
 
 
 class Note(Field):
@@ -51,16 +51,25 @@ class Note(Field):
         self.value = new_content
 
     def add_tag(self, new_tag: str) -> None:
+        new_tag = auto_add_hashtag(new_tag)
         for tag in self.tags:
+            print(f'{tag.value} ||| {new_tag}')
             if tag.value == new_tag:
                 raise TagDuplicateError()
-        self.tags.append(tag)
+        self.tags.append(Tag(new_tag))
 
-    def remove_tag(self, tag_to_remove: str):
-        if tag_to_remove not in self.tags:
-            raise TagNotFound(f'Tag {tag_to_remove} is not linked to selected note.')
-        self.tags = [tag for tag in self.tags if tag != tag_to_remove]
+    def remove_tag(self, tag_to_remove: str) -> None:
+        tag_to_remove = auto_add_hashtag(tag_to_remove)
+        if tag_to_remove not in [tag.value for tag in self.tags]:
+            raise TagNotFound()
+        self.tags = [tag for tag in self.tags if tag.value != tag_to_remove]
+
+    def __show_tags(self):
+        result_str = '\nTags:'
+        for tag in self.tags:
+            result_str += f'\n{tag.value}'
+        return result_str
 
     def __str__(self):
         formatted_date = self.creation_date.strftime("%Y-%m-%d %H:%M:%S")
-        return f"{self.title.upper()} created at {formatted_date}\n\n{self.value}"
+        return f"{self.title.upper()} created at {formatted_date}\n\n{self.value}{self.__show_tags()}"

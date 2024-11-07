@@ -1,4 +1,4 @@
-from models import Field
+from models.field import Field
 import re
 
 tag_regexp = re.compile(r'#?[A-Za-z0-9_]+')

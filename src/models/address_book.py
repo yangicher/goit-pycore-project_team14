@@ -170,9 +170,9 @@ class AddressBook(UserDict):
     
     def find_note_by_title(self, note_title: str) -> Note | None:
         """
-        Get single note from notes list by it's title.
+        Get single note by title
         """
-        for note in self.data['notes']:
-            if note.title == note_title:
+        for title, note in self.notes.items():
+            if title.lower() == note_title.lower():
                 return note
         return None
