@@ -277,8 +277,7 @@ def get_all_contacts(book: AddressBook):
         None
     """
     for record in book.data.values():
-        if not isinstance(record, list):
-            print(record)
+        print(record)
 
 
 @input_error(COMMAND_NAMES["add-birthday"])
