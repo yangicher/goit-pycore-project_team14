@@ -2,7 +2,7 @@ import pickle
 
 from colorama import Fore, Style
 
-from models import AddressBook, Record
+from models import AddressBook, Record, Note, TagDuplicateError, TagNotFound, TagValidationError
 
 COMMANDS = """
     Available commands:
@@ -19,6 +19,7 @@ COMMANDS = """
     - add-address <name> <address>: Add an address to a contact.
     - change-address <name> <address>: Change an address for a contact
     - add-phone <name> <phone>: Add a phone to a contact.
+    - add-tag <note title> <tag>: Add tag to a note.
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -40,6 +41,7 @@ COMMAND_NAMES = {
     "add-address": "add-address",
     "change-address": "change-address",
     "add-phone": "add-phone",
+    "add-tag": "add-tag"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -112,6 +114,12 @@ def input_error(command_name):
         def inner(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
+            except TagValidationError:
+                return 'Tag can only include latin chars, numbers and underscore ("_")'
+            except TagDuplicateError:
+                return 'This note alredy include this tag.'
+            except TagNotFound:
+                return 'Entered tag not found.'
             except ValueError:
                 match command_name:
                     case "add":
@@ -246,7 +254,8 @@ def get_all_contacts(book: AddressBook):
         None
     """
     for record in book.data.values():
-        print(record)
+        if not isinstance(record, list):
+            print(record)
 
 
 @input_error(COMMAND_NAMES["add-birthday"])
@@ -395,6 +404,14 @@ def add_phone(args, book: AddressBook):
     else:
         print(f"Contact {name} not found.")
 
+@input_error
+def add_tag(args, book: AddressBook):
+    note_title, tag = args
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return 'Note not found.'
+    note.add_tag(tag)
+    return f'Tag added to note.'
 
 def main():
     """
@@ -414,6 +431,7 @@ def main():
         - "add-address": Adds address to a contact.
         - "change-address": Change exiting address to a contact.
         - "add-phone": Adds a phone to a contact.
+        - "add-tag": Adds tag to a note.
         - "help": Displays a list of available commands.
 
     If an invalid command is entered, an error message is displayed and the user
@@ -422,6 +440,7 @@ def main():
 
     try:
         book = load_data()
+        print(book.data)
         print("Welcome to the assistant bot!")
         while True:
             user_input = input(f"{Style.RESET_ALL}Enter a command: ")
@@ -458,6 +477,8 @@ def main():
                         change_address(args, book)
                     case "add-phone":
                         add_phone(args, book)
+                    case "add-tag":
+                        print(add_tag(args, book))
                     case "help":
                         print(COMMANDS)
             else:

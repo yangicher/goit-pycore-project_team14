@@ -1,5 +1,6 @@
 from datetime import datetime
 from models.field import Field
+from models import Tag, TagDuplicateError, TagNotFound
 
 
 class Note(Field):
@@ -23,6 +24,7 @@ class Note(Field):
         self.title: str = title
         self.value = note
         self.creation_date = datetime.now()
+        self.tags: list[Tag] = []
 
     def change_title(self, new_title):
         """
@@ -47,6 +49,17 @@ class Note(Field):
         None
         """
         self.value = new_content
+
+    def add_tag(self, new_tag: str) -> None:
+        for tag in self.tags:
+            if tag.value == new_tag:
+                raise TagDuplicateError()
+        self.tags.append(tag)
+
+    def remove_tag(self, tag_to_remove: str):
+        if tag_to_remove not in self.tags:
+            raise TagNotFound(f'Tag {tag_to_remove} is not linked to selected note.')
+        self.tags = [tag for tag in self.tags if tag != tag_to_remove]
 
     def __str__(self):
         formatted_date = self.creation_date.strftime("%Y-%m-%d %H:%M:%S")
