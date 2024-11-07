@@ -100,23 +100,24 @@ class AddressBook(UserDict):
         upcoming_birthdays = []
 
         for user in self.data.values():
-            birthday_this_year = user.birthday.value.date().replace(year=today.year)
-            days_until_birthday = (birthday_this_year - today).days
+            if(user.birthday != None):
+                birthday_this_year = user.birthday.value.date().replace(year=today.year)
+                days_until_birthday = (birthday_this_year - today).days
 
-            if 0 <= days_until_birthday <= days:
-                if birthday_this_year.weekday() in WEEKEND_DAYS:
-                    birthday_this_year += timedelta(
-                        days=(days - birthday_this_year.weekday())
+                if 0 <= days_until_birthday <= days:
+                    if birthday_this_year.weekday() in WEEKEND_DAYS:
+                        birthday_this_year += timedelta(
+                            days=(days - birthday_this_year.weekday())
+                        )
+
+                    upcoming_birthdays.append(
+                        {
+                            "name": user.name.value,
+                            "next_upcoming_birthday": birthday_this_year.strftime(
+                                DATE_FORMAT
+                            ),
+                        }
                     )
-
-                upcoming_birthdays.append(
-                    {
-                        "name": user.name.value,
-                        "next_upcoming_birthday": birthday_this_year.strftime(
-                            DATE_FORMAT
-                        ),
-                    }
-                )
 
         return upcoming_birthdays
 

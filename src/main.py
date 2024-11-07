@@ -19,6 +19,10 @@ COMMANDS = """
     - delete-note <title>: Delete a note by title.
     - edit-note <title> <new_content>: Edit an existing note.
     - find-notes <query>: Search notes by title or content.
+    - add-email <name> <email>: Add an email to a contact.
+    - change-email <name> <email>: Change the email of a contact.
+    - add-address <name> <address>: Add an address to a contact.
+    - change-address <name> <address>: Change an address for a contact
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -29,11 +33,16 @@ COMMAND_NAMES = {
     "phone": "phone",
     "all": "all",
     "help": "help",
+    "hello": "hello",
     "close": "close",
     "exit": "exit",
     "add-birthday": "add-birthday",
     "show-birthday": "show-birthday",
     "birthdays": "birthdays",
+    "add-email": "add-email",
+    "change-email": "change-email",
+    "add-address": "add-address",
+    "change-address": "change-address"
     "add-note": "add-note",
     "show-notes": "show-notes",
     "delete-note": "delete-note",
@@ -102,6 +111,8 @@ def input_error(command_name):
         - "phone": Error message for retrieving a phone number with missing user name.
         - "add-birthday": Error message for adding a birthday with missing user name or birthday.
         - "show-birthday": Error message for showing a birthday with missing user name.
+        - "add-address": Error message for adding an address with missing user name or address.
+        - "change-address": Error message for changing an address with missing name or address.
         - Default: Error message for invalid input.
     """
 
@@ -127,6 +138,10 @@ def input_error(command_name):
                         )
                     case "show-birthday":
                         print(f"Error in '{command_name}' command: Enter user name.")
+                    case "add-address":
+                        return f"Error in '{command_name}' command: Enter contact name and address."
+                    case "change-address":
+                        print(f"Error in '{command_name}' command: Enter contact name and address.")
                     case "birthdays":
                         print(
                             f"Error in '{command_name}' command: Enter user lookup days."
@@ -302,6 +317,78 @@ def birthdays(args, book: AddressBook):
     else:
         print("No upcoming birthdays.")
 
+@input_error(COMMAND_NAMES["add-email"])
+def add_email(args, book: AddressBook):
+    """Add an email to a contact."""
+    try:
+        name, email = args
+        record = book.find(name)
+        if record:
+            record.add_email(email)
+            print(f"Email {email} added to {name}.")
+        else:
+            print(f"Contact {name} not found.")
+    except ValueError as e:
+        print(str(e))
+
+@input_error(COMMAND_NAMES["change-email"])
+def change_email(args, book: AddressBook):
+    """Change the email of a contact."""
+    try:
+        name, email = args
+        record = book.find(name)
+        if record:
+            record.edit_email(email)
+        else:
+            print(f"Contact {name} not found.")
+    except ValueError as e:
+        print(str(e))
+
+@input_error(COMMAND_NAMES["add-address"])
+def add_address(args, book: AddressBook):
+    """Add an address to a contact."""
+    name = args[0]
+    address = " ".join(args[1:])
+    record = book.find(name)
+    if record:
+        record.add_address(address)
+        print(f"Address added to {name}.")
+    else:
+        print(f"Contact {name} not found.")
+
+@input_error(COMMAND_NAMES["change-address"])
+def change_address(args, book: AddressBook):
+    """Change the address of a contact."""
+    name = args[0]
+    address = " ".join(args[1:])
+    record = book.find(name)
+    if record:
+        record.edit_address(address)
+    else:
+        print(f"Contact {name} not found.")
+
+
+@input_error(COMMAND_NAMES['add-address'])
+def add_address(args, book: AddressBook) -> str:
+    name, address = args
+    record: Record | None = book.find(name)
+    if not record:
+        return f"Contact {name} not found."
+    record.add_address(address)
+    return f'Address added for {record.name}'
+
+
+@input_error(COMMAND_NAMES["change-address"])
+def change_address(args, book: AddressBook) -> str:
+    name, address = args
+    record: Record | None = book.find(name)
+    if not record:
+        return f'Contact {name} not found.'
+    elif not record.address:
+        return f'There are not addresses for {record.name}'
+    record.change_address(address)
+    return f'Address for {name} changed.'
+
 @input_error(COMMAND_NAMES["add-note"])
 def add_note(args, book: AddressBook):
     """Add a new note to the address book."""
@@ -367,6 +454,8 @@ def main():
         - "add-birthday": Adds a birthday to a contact.
         - "show-birthday": Shows the birthday of a contact.
         - "birthdays": Lists upcoming birthdays.
+        - "add-address": Adds address to a contact.
+        - "change-address": Change exiting address to a contact.
         - "help": Displays a list of available commands.
 
     If an invalid command is entered, an error message is displayed and the user
@@ -401,6 +490,14 @@ def main():
                         show_birthday(args, book)
                     case "birthdays":
                         birthdays(args, book)
+                    case "add-email":
+                        add_email(args, book)
+                    case "change-email":
+                        change_email(args, book)
+                    case "add-address":
+                        print(add_address(args, book))
+                    case "change-address":
+                        print(change_address(args, book))
                     case "add-note":
                         add_note(args, book)
                     case "show-notes":
