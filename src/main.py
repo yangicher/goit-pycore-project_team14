@@ -22,6 +22,7 @@ COMMANDS = """
     - delete-note <title>: Delete a note by title.
     - edit-note <title> <new_content>: Edit an existing note.
     - find-notes <query>: Search notes by title or content.
+    - find-notes-by-tag <tag>: Searching notes by entered tag.
     - add-email <name> <email>: Add an email to a contact.
     - change-email <name> <email>: Change the email of a contact.
     - add-address <name> <address>: Add an address to a contact.
@@ -56,7 +57,8 @@ COMMAND_NAMES = {
     "find-notes": "find-notes",
     "add-phone": "add-phone",
     "add-tag": "add-tag",
-    "remove-tag": "remove-tag"
+    "remove-tag": "remove-tag",
+    "find-notes-by-tag": "find-notes-by-tag"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -488,6 +490,17 @@ def remove_tag(args, book: AddressBook) -> str:
     note.remove_tag(tag)
     return f"Tag '{tag}' removed from note '{note.title}'"
 
+# @input_error(COMMAND_NAMES['find-notes-by-tag'])
+def find_notes_by_tag(args, book: AddressBook) -> str:
+    tag = args[0]
+    notes: list[Note]= book.find_notes_by_tag(tag)
+    if not notes:
+        print(f'Any note linked to tag "{tag}"')
+    for note in notes:
+        print(note)
+
+
+
 def main():
     """
     The main function of the assistant bot. It initializes the AddressBook and
@@ -565,6 +578,8 @@ def main():
                         print(add_tag(args, book))
                     case "remove-tag":
                         print(remove_tag(args, book))
+                    case "find-notes-by-tag":
+                        find_notes_by_tag(args, book)
                     case "help":
                         print(COMMANDS)
             else:

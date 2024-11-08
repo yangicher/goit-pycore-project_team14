@@ -176,3 +176,6 @@ class AddressBook(UserDict):
             if title.lower() == note_title.lower():
                 return note
         return None
+    
+    def find_notes_by_tag(self, tag: str) -> list[Note]:
+        return [note for note in self.notes.values() if note.is_tag_exists(tag)]

@@ -58,9 +58,13 @@ class Note(Field):
                 raise TagDuplicateError()
         self.tags.append(Tag(new_tag))
 
+    def is_tag_exists(self, tag: str) -> bool:
+        tag = auto_add_hashtag(tag)
+        return tag in [tag.value for tag in self.tags]
+
     def remove_tag(self, tag_to_remove: str) -> None:
         tag_to_remove = auto_add_hashtag(tag_to_remove)
-        if tag_to_remove not in [tag.value for tag in self.tags]:
+        if not self.is_tag_exists(tag_to_remove):
             raise TagNotFound()
         self.tags = [tag for tag in self.tags if tag.value != tag_to_remove]
 
