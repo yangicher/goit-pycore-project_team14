@@ -4,6 +4,8 @@ from colorama import Fore, Style
 
 from models.address_book import AddressBook
 from models.record import Record
+from models.note import Note
+from models.tag import TagDuplicateError, TagNotFound, TagValidationError
 
 COMMANDS = """
     Available commands:
@@ -25,6 +27,8 @@ COMMANDS = """
     - add-address <name> <address>: Add an address to a contact.
     - change-address <name> <address>: Change an address for a contact
     - add-phone <name> <phone>: Add a phone to a contact.
+    - add-tag <note title> <tag>: Add tag to a note.
+    - remove-tag <note title> <tag>: Removing exiting tag from note.
     - help: List available commands.
     - close/exit: Close the assistant.
     """
@@ -51,6 +55,8 @@ COMMAND_NAMES = {
     "edit-note": "edit-note",
     "find-notes": "find-notes",
     "add-phone": "add-phone",
+    "add-tag": "add-tag",
+    "remove-tag": "remove-tag"
 }
 
 FILE_NAME = "address_book.pkl"
@@ -123,6 +129,12 @@ def input_error(command_name):
         def inner(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
+            except TagValidationError:
+                return 'Tag can only include latin chars, numbers and underscore ("_")'
+            except TagDuplicateError:
+                return 'This note alredy include entered tag.'
+            except TagNotFound:
+                return 'Entered tag not found.'
             except ValueError:
                 match command_name:
                     case ("add", "change"):
@@ -451,6 +463,24 @@ def find_notes(args, book: AddressBook):
     book.find_notes(query)
 
 
+@input_error(COMMAND_NAMES["add-tag"])
+def add_tag(args, book: AddressBook) -> str:
+    note_title, tag = args
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return 'Note not found.'
+    note.add_tag(tag)
+    return f'Tag {tag} added to note {note_title}.'
+
+@input_error(COMMAND_NAMES["remove-tag"])
+def remove_tag(args, book: AddressBook) -> str:
+    note_title, tag = args
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return 'Note not found'
+    note.remove_tag(tag)
+    return f"Tag '{tag}' removed from note '{note.title}'"
+
 def main():
     """
     The main function of the assistant bot. It initializes the AddressBook and
@@ -469,6 +499,7 @@ def main():
         - "add-address": Adds address to a contact.
         - "change-address": Change exiting address to a contact.
         - "add-phone": Adds a phone to a contact.
+        - "add-tag": Adds tag to a note.
         - "help": Displays a list of available commands.
 
     If an invalid command is entered, an error message is displayed and the user
@@ -523,6 +554,10 @@ def main():
                         edit_note(args, book)
                     case "find-notes":
                         find_notes(args, book)
+                    case "add-tag":
+                        print(add_tag(args, book))
+                    case "remove-tag":
+                        print(remove_tag(args, book))
                     case "help":
                         print(COMMANDS)
             else:
