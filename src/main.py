@@ -135,7 +135,7 @@ def input_error(command_name):
                 return 'This note alredy include entered tag.'
             except TagNotFound:
                 return 'Entered tag not found.'
-            except ValueError:
+            except ValueError as e:
                 match command_name:
                     case ("add", "change"):
                         print(
@@ -161,14 +161,21 @@ def input_error(command_name):
                         print(
                             f"Error in '{command_name}' command: Enter contact name and phone."
                         )
-                    case ("add-email", "change-email"):
+                    case ("add-email"):
                         print(
                             f"Error in '{command_name}' command: Enter contact name and email."
                         )
-
-                    case ("add-note", "edit-note"):
+                    case("change-email"):
                         print(
-                            f"Error in '{command_name}' command: Enter note title ant content"
+                            f"Error in '{command_name}' command: Enter contact name and email."
+                        )
+                    case ("add-note"):
+                        print(
+                            f"Error: '{e}'"
+                        )
+                    case("edit-note"):
+                        print(
+                            f"Error: '{e}'"
                         )
                     case "delete-note":
                         print(
