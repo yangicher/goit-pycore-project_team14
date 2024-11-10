@@ -1,5 +1,6 @@
 from collections import UserDict
 from datetime import datetime, timedelta
+from colorama import Fore
 
 from models.note import Note
 from models.record import Record
@@ -27,10 +28,10 @@ class AddressBook(UserDict):
         get_upcoming_birthdays():
             Returns a list of contacts with upcoming birthdays within the next week. Adjusts for weekends.
     """
+
     def __init__(self):
         super().__init__()
         self.notes = {}
-
 
     def add_record(self, record: Record):
         """
@@ -46,11 +47,13 @@ class AddressBook(UserDict):
         """
         if not self.data.get(record.name.value):
             self.data[record.name.value] = record
-            print(f"Contact {record.name.value} added.")
+            print(
+                f"\n{Fore.GREEN}Contact {Fore.CYAN}{record.name.value} {Fore.GREEN}added.\n"
+            )
         else:
             self.data[record.name.value].add_phone(record.phones[0].value)
             print(
-                f"Phone number {record.phones[0].value} add to the contact {record.name.value}."
+                f"\n{Fore.GREEN}Phone number {Fore.CYAN}{record.phones[0].value} {Fore.GREEN}added to the contact {Fore.CYAN}{record.name.value}{Fore.GREEN}.\n"
             )
 
     def find(self, name: str):
@@ -80,20 +83,21 @@ class AddressBook(UserDict):
         """
         try:
             self.data.pop(name)
+            print(f"\n{Fore.GREEN}Contact {Fore.CYAN}{name} {Fore.GREEN}deleted.\n")
         except KeyError:
-            print(f"Contact {name} not found.")
+            print(f"\n{Fore.RED}Contact {Fore.CYAN} {name} {Fore.RED}not found.\n")
 
     def get_upcoming_birthdays(self, days):
         """
-        Get a list of upcoming birthdays within the next week.
+        Get a list of upcoming birthdays within the specified number of days.
 
         This method checks each user's birthday and calculates if it falls within the next
-        seven days from the current date. If the birthday falls on a weekend, it adjusts
+        specified days from the current date. If the birthday falls on a weekend, it adjusts
         the date to the next Monday.
 
         Returns:
             list: A list of dictionaries, each containing the user's name and their next
-                  upcoming birthday in the specified date format.
+                upcoming birthday in the specified date format.
         """
 
         if len(self.data) == 0:
@@ -102,15 +106,17 @@ class AddressBook(UserDict):
         upcoming_birthdays = []
 
         for user in self.data.values():
-            if(user.birthday != None):
+            if user.birthday is not None:
                 birthday_this_year = user.birthday.value.date().replace(year=today.year)
+                if birthday_this_year < today:
+                    birthday_this_year = birthday_this_year.replace(year=today.year + 1)
+
                 days_until_birthday = (birthday_this_year - today).days
 
                 if 0 <= days_until_birthday <= days:
                     if birthday_this_year.weekday() in WEEKEND_DAYS:
-                        birthday_this_year += timedelta(
-                            days=(days - birthday_this_year.weekday())
-                        )
+                        days_to_monday = 7 - birthday_this_year.weekday()
+                        birthday_this_year += timedelta(days=days_to_monday)
 
                     upcoming_birthdays.append(
                         {
@@ -124,68 +130,145 @@ class AddressBook(UserDict):
         return upcoming_birthdays
 
     def add_note(self, title: str, content: str):
-        """Add a new note to the address book."""
+        """
+        Adds a note with the given title and content to the address book.
+
+        Args:
+            title (str): The title of the note.
+            content (str): The content of the note.
+
+        Raises:
+            ValueError: If a note with the given title already exists.
+
+        Prints:
+            A success message indicating that the note was added.
+        """
+
         if title in self.notes:
-            raise ValueError(f"Note with title '{title}' already exists")
+            raise ValueError(
+                f"\n{Fore.GREEN}Note with title {Fore.CYAN}{title} {Fore.GREEN}already exists.\n"
+            )
         self.notes[title] = Note(title, content)
-        print(f"Note '{title}' added successfully")
-
-    def show_notes(self):
-        """Show all notes in the address book."""
-        if not self.notes:
-            print("No notes found")
-            return
-
-        for note in self.notes.values():
-            print(note)
+        print(
+            f"\n{Fore.GREEN}Note {Fore.CYAN}{title} {Fore.GREEN}added successfully.\n"
+        )
 
     def delete_note_by_title(self, title: str):
-        """Delete a note by its title."""
+        """
+        Deletes a note by its title.
+
+        Args:
+            title (str): The title of the note to be deleted.
+
+        Raises:
+            KeyError: If the note with the specified title is not found.
+
+        Prints:
+            Success message if the note is deleted successfully.
+        """
+
         if title not in self.notes:
-            raise ValueError(f"Note with title '{title}' not found")
+            raise KeyError(
+                f"\n{Fore.RED}Note with title {Fore.CYAN}{title}{Fore.RED} not found.\n"
+            )
 
         del self.notes[title]
-        print(f"Note '{title}' deleted successfully")
+        print(
+            f"\n{Fore.GREEN}Note {Fore.CYAN}{title}{Fore.GREEN} deleted successfully.\n"
+        )
 
     def edit_note(self, title: str, new_content: str):
-        """Edit the content of an existing note."""
-        if title not in self.notes:
-            raise ValueError(f"Note with title '{title}' not found")
+        """
+        Edit the content of an existing note.
 
-        self.notes[title].value = new_content  # Обновляем значение value, а не content
-        print(f"Note '{title}' updated successfully")
+        Args:
+            title (str): The title of the note to be edited.
+            new_content (str): The new content to replace the existing content of the note.
+
+        Raises:
+            KeyError: If a note with the specified title does not exist.
+
+        Prints:
+            A success message indicating that the note has been updated.
+        """
+
+        if title not in self.notes:
+            raise KeyError(
+                f"\n{Fore.RED}Note with title {Fore.CYAN}{title}{Fore.RED} not found.\n"
+            )
+
+        self.notes[title].value = new_content
+        print(
+            f"\n{Fore.GREEN}Note {Fore.CYAN}{title}{Fore.GREEN} updated successfully.\n"
+        )
 
     def find_notes(self, query: str):
-        """Search notes by title or content."""
-        found_notes = []
-        for note in self.notes.values():
-            if query.lower() in note.title.lower() or query.lower() in note.value.lower():
-                found_notes.append(note)
+        """
+        Searches for notes that contain the given query in their title or value.
 
-        if not found_notes:
-            print(f"No notes found matching '{query}'")
-        else:
-            for note in found_notes:
-                print(note)
-    
+        Args:
+            query (str): The search string to look for in the notes.
+
+        Returns:
+            dict or str: A dictionary of found notes where the keys are the note identifiers
+                         and the values are the note objects. If no notes are found, returns
+                         a string message indicating no matches.
+        """
+        
+        found_notes = {
+            key: note
+            for key, note in self.notes.items()
+            if query.lower() in note.title.lower()
+            or query.lower() in note.value.lower()
+        }
+
+        return found_notes
+
     def find_note_by_title(self, note_title: str) -> Note | None:
         """
-        Get single note by title
+        Find a note by its title.
+
+        Args:
+            note_title (str): The title of the note to find.
+
+        Returns:
+            Note | None: The note object if found, otherwise None.
         """
+
         for title, note in self.notes.items():
             if title.lower() == note_title.lower():
                 return note
         return None
-    
+
     def find_notes_by_tag(self, tag: str) -> list[Note]:
-        return [note for note in self.notes.values() if note.is_tag_exists(tag)]
+        """
+        Find notes by a specific tag.
+        Args:
+            tag (str): The tag to search for in the notes.
+        Returns:
+            list[Note]: A list of notes that contain the specified tag.
+        """
 
-    def get_contacts_table(self):
-        """Returns a formatted table of all contacts"""
-        from table_view import get_contacts_table
-        return get_contacts_table(self.data)
+        notes = {
+            key: note for key, note in self.notes.items() if note.is_tag_exists(tag)
+        }
+        return notes
 
-    def get_notes_table(self):
-        """Returns a formatted table of all notes"""
-        from table_view import get_notes_table
-        return get_notes_table(self.notes)
+    def get_contacts(self):
+        """
+        Retrieve all contacts from the address book.
+
+        Returns:
+            dict: A dictionary containing all contacts.
+        """
+
+        return self.data
+
+    def get_notes(self):
+        """
+        Retrieve the notes associated with the address book.
+        Returns:
+            list: A list of notes.
+        """
+
+        return self.notes

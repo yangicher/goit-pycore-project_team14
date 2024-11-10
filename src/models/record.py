@@ -1,8 +1,10 @@
+from colorama import Fore
 from models.name import Name
 from models.phone import Phone
 from models.birthday import Birthday
 from models.address import Address
 from models.email import Email
+
 
 class Record:
     """
@@ -54,7 +56,8 @@ class Record:
             None
         """
         phone = Phone(phone_number)
-        self.phones.append(phone)
+        if phone:
+            self.phones.append(phone)
 
     def add_email(self, value):
         """
@@ -63,6 +66,7 @@ class Record:
             value (str): The email address to be added.
         """
         self.email = Email(value)
+        print(f"\n{Fore.GREEN}Email {Fore.CYAN}{value} {Fore.GREEN}added to {Fore.CYAN}{self.name}{Fore.GREEN}.\n")
 
     def add_address(self, address):
         """
@@ -72,6 +76,7 @@ class Record:
             address (str): The physical address to be added.
         """
         self.address = Address(address)
+        print(f"\n{Fore.GREEN}Address added to {Fore.CYAN}{self.name}.\n")
 
     def edit_email(self, new_email):
         """
@@ -82,7 +87,7 @@ class Record:
         """
 
         self.email = Email(new_email)
-        print(f"Email changed to {new_email}.")
+        print(f"\n{Fore.GREEN}Email changed to {Fore.CYAN}{new_email}{Fore.GREEN}.\n")
 
     def edit_address(self, new_address):
         """
@@ -92,7 +97,9 @@ class Record:
             new_address (str): The new physical address.
         """
         self.address = Address(new_address)
-        print(f"Address changed to {new_address}.")
+        print(
+            f"\n{Fore.GREEN}Address changed to {Fore.CYAN}{new_address}{Fore.GREEN}.\n"
+        )
 
     def edit_phone(self, current_phone, new_phone):
         """
@@ -108,7 +115,9 @@ class Record:
         for phone in self.phones:
             if phone.value == current_phone:
                 phone.value = new_phone
-                print(f"Phone number {current_phone} changed to {new_phone}.")
+                print(
+                    f"\n{Fore.GREEN}Phone number {Fore.CYAN}{current_phone} {Fore.GREEN}changed to {Fore.CYAN}{new_phone}{Fore.GREEN}.\n"
+                )
                 break
 
     def find_phone(self, phone_number):
@@ -157,10 +166,10 @@ class Record:
         return self.birthday
 
     def change_address(self, new_address: str) -> None:
-        '''
+        """
         Change exiting address to the record.
 
         Args:
             new_address (str): The home address in the string format.
-        '''
+        """
         self.address = Address(new_address)
