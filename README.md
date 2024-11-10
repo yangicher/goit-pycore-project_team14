@@ -42,21 +42,29 @@ python src/main.py
 
 The assistant bot supports the following commands:
 
-- `hello`: Greet the assistant.
-- `add <name> <phone>`: Add a new contact.
-- `change <name> <old_phone> <new_phone>`: Change the phone number of a contact.
-- `phone <name>`: Get the phone number of a contact.
-- `all`: List all contacts.
-- `add-birthday <name> <birthday>`: Add a birthday to a contact.
-- `show-birthday <name>`: Show the birthday of a contact.
-- `birthdays <days_lookup>`: Show all birthdays from today to the specified number of days.
-- `add-email <name> <email>`: Add an email to a contact.
-- `change-email <name> <email>`: Change the email of a contact.
-- `add-address <name> <address>`: Add an address to a contact.
-- `change-address <name> <address>`: Change the address of a contact.
-- `add-phone <name> <phone>`: Add a phone to a contact.
-- `help`: List available commands.
-- `close`/`exit`: Close the assistant.
+- hello: Greet the assistant.
+- add <name> <phone>: Add a new contact.
+- change <name> <old_phone> <new_phone>: Change the phone number of a contact.
+- phone <name>: Get the phone number of a contact.
+- all: List all contacts.
+- add-birthday <name> <birthday>: Add a birthday to a contact.
+- show-birthday: <name> : Show the birthday of a contact.
+- birthdays: <days_lookup> Show all birthdays from today to days_lookup.
+- add-note <title> <content>: Add a new note.
+- show-notes: Show all notes.
+- delete-note <title>: Delete a note by title.
+- edit-note <title> <new_content>: Edit an existing note.
+- find-notes <query>: Search notes by title or content.
+- find-notes-by-tag <tag>: Searching notes by entered tag.
+- add-email <name> <email>: Add an email to a contact.
+- change-email <name> <email>: Change the email of a contact.
+- add-address <name> <address>: Add an address to a contact.
+- change-address <name> <address>: Change an address for a contact
+- add-phone <name> <phone>: Add a phone to a contact.
+- add-tag <note title> <tag>: Add tag to a note.
+- remove-tag <note title> <tag>: Removing exiting tag from note.
+- help: List available commands.
+- close/exit: Close the assistant.
 
 ## Example
 
