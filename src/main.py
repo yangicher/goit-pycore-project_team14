@@ -6,6 +6,7 @@ from models.address_book import AddressBook
 from models.record import Record
 from models.note import Note
 from models.tag import TagDuplicateError, TagNotFound, TagValidationError
+from prompt_input import prompt_input
 
 COMMANDS = """
     Available commands:
@@ -528,7 +529,8 @@ def main():
         book = load_data()
         print("Welcome to the assistant bot!")
         while True:
-            user_input = input(f"{Style.RESET_ALL}Enter a command: ")
+            auto_input = prompt_input(COMMAND_NAMES)
+            user_input = auto_input("Enter a command: ")
             command, *args = parse_input(user_input)
             if command in COMMAND_NAMES:
                 match command:
