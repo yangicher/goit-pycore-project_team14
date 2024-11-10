@@ -277,16 +277,13 @@ def get_phone(args, book: AddressBook):
 
 def get_all_contacts(book: AddressBook):
     """
-    Print all contacts in the given address book.
+    Print all contacts in a formatted table.
 
     Args:
         book (AddressBook): The address book containing contact records.
-
-    Returns:
-        None
     """
-    for record in book.data.values():
-        print(record)
+    table = book.get_contacts_table()
+    print(table)
 
 
 @input_error(COMMAND_NAMES["add-birthday"])
@@ -443,8 +440,9 @@ def add_note(args, book: AddressBook):
 
 @input_error(COMMAND_NAMES["show-notes"])
 def show_notes(book: AddressBook):
-    """Show all notes in the address book."""
-    book.show_notes()
+    """Show all notes in a formatted table."""
+    table = book.get_notes_table()
+    print(table)
 
 
 @input_error(COMMAND_NAMES["delete-note"])

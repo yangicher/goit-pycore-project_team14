@@ -179,3 +179,13 @@ class AddressBook(UserDict):
     
     def find_notes_by_tag(self, tag: str) -> list[Note]:
         return [note for note in self.notes.values() if note.is_tag_exists(tag)]
+
+    def get_contacts_table(self):
+        """Returns a formatted table of all contacts"""
+        from table_view import get_contacts_table
+        return get_contacts_table(self.data)
+
+    def get_notes_table(self):
+        """Returns a formatted table of all notes"""
+        from table_view import get_notes_table
+        return get_notes_table(self.notes)
