@@ -98,9 +98,8 @@ def add_address(book: AddressBook):
     if not record:
         print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
         return
-    address = wrapped_prompt("Enter address: ")  
+    address = wrapped_prompt("Enter address: ")
     record.add_address(address)
-        
 
 
 @input_error(COMMAND_NAMES["add_birthday"])
@@ -120,15 +119,16 @@ def add_birthday(book: AddressBook):
     """
 
     name = wrapped_prompt("Enter name: ", completer=names_completer)
-    birthday = wrapped_prompt("Enter birthday (DD.MM.YYYY): ")
+
     record: Record = book.find(name)
-    if record:
-        record.add_birthday(birthday)
-        print(
-            f"\n{Fore.GREEN}Birthday {Fore.CYAN}{birthday} {Fore.GREEN}added to {Fore.CYAN}{name}{Fore.GREEN}.\n"
-        )
-    else:
+    if not record:
         print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+
+    birthday = wrapped_prompt("Enter birthday (DD.MM.YYYY): ")
+    record.add_birthday(birthday)
+    print(
+        f"\n{Fore.GREEN}Birthday {Fore.CYAN}{birthday} {Fore.GREEN}added to {Fore.CYAN}{name}{Fore.GREEN}.\n"
+    )
 
 
 @input_error(COMMAND_NAMES["add_email"])
@@ -148,13 +148,13 @@ def add_email(book: AddressBook):
     """
 
     name = wrapped_prompt("Enter name: ", completer=names_completer)
-    email = wrapped_prompt("Enter email: ")
     record: Record = book.find(name)
-    if record:
-        record.add_email(email)
-        
-    else:
+    if not record:
         print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+
+    email = wrapped_prompt("Enter email: ")
+    record.add_email(email)
 
 
 @input_error(COMMAND_NAMES["add_note"])
@@ -272,9 +272,7 @@ def change_phone(book: AddressBook):
     if not record:
         print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
         return
-    phones_completer = WordCompleter(
-        [phone.value for record in book.data.values() for phone in record.phones]
-    )
+    phones_completer = WordCompleter([phone.value for phone in record.phones])
     old_phone = wrapped_prompt("Enter old phone (10 digits): ", phones_completer)
     new_phone = wrapped_prompt("Enter new phone (10 digits): ")
     record.edit_phone(old_phone, new_phone)
