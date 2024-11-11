@@ -1,293 +1,110 @@
-import pickle
+from prompt_toolkit import HTML, PromptSession, print_formatted_text, prompt
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.styles import Style
+from colorama import Fore
 
-from colorama import Fore, Style
-
+from constants.constants import COMMAND_NAMES, COMMANDS
+from decorators.input_error import input_error
+from helpers.data import load_data, save_data
+from helpers.os import clear_console
+from helpers.table_view import (
+    get_birthday_table,
+    get_birthdays_table,
+    get_contacts_table,
+    get_notes_table,
+    get_phone_table,
+)
 from models.address_book import AddressBook
 from models.record import Record
 from models.note import Note
-from models.tag import TagDuplicateError, TagNotFound, TagValidationError
 
-COMMANDS = """
-    Available commands:
-    - hello: Greet the assistant.
-    - add <name> <phone>: Add a new contact.
-    - change <name> <old_phone> <new_phone>: Change the phone number of a contact.
-    - phone <name>: Get the phone number of a contact.
-    - all: List all contacts.
-    - add-birthday <name> <birthday>: Add a birthday to a contact.
-    - show-birthday: <name> : Show the birthday of a contact.
-    - birthdays: <days_lookup> Show all birthdays from today to days_lookup.
-    - add-note <title> <content>: Add a new note.
-    - show-notes: Show all notes.
-    - delete-note <title>: Delete a note by title.
-    - edit-note <title> <new_content>: Edit an existing note.
-    - find-notes <query>: Search notes by title or content.
-    - find-notes-by-tag <tag>: Searching notes by entered tag.
-    - add-email <name> <email>: Add an email to a contact.
-    - change-email <name> <email>: Change the email of a contact.
-    - add-address <name> <address>: Add an address to a contact.
-    - change-address <name> <address>: Change an address for a contact
-    - add-phone <name> <phone>: Add a phone to a contact.
-    - add-tag <note title> <tag>: Add tag to a note.
-    - remove-tag <note title> <tag>: Removing exiting tag from note.
-    - help: List available commands.
-    - close/exit: Close the assistant.
+commands_completer = WordCompleter(COMMAND_NAMES.keys())
+names_completer = WordCompleter([])
+notes_completer = WordCompleter([])
+tags_completer = WordCompleter([])
+
+# Define the style for the welcome message
+style = Style.from_dict({"welcome": "bold fg:green", "command": "fg:yellow"})
+
+# Define the welcome message
+welcome_message = HTML(
     """
-
-COMMAND_NAMES = {
-    "add": "add",
-    "change": "change",
-    "phone": "phone",
-    "all": "all",
-    "help": "help",
-    "hello": "hello",
-    "close": "close",
-    "exit": "exit",
-    "add-birthday": "add-birthday",
-    "show-birthday": "show-birthday",
-    "birthdays": "birthdays",
-    "add-email": "add-email",
-    "change-email": "change-email",
-    "add-address": "add-address",
-    "change-address": "change-address",
-    "add-note": "add-note",
-    "show-notes": "show-notes",
-    "delete-note": "delete-note",
-    "edit-note": "edit-note",
-    "find-notes": "find-notes",
-    "add-phone": "add-phone",
-    "add-tag": "add-tag",
-    "remove-tag": "remove-tag",
-    "find-notes-by-tag": "find-notes-by-tag"
-}
-
-FILE_NAME = "address_book.pkl"
+<welcome>Welcome to the Address Book Assistant!</welcome>
+<command>Type 'help' to see the list of available commands.</command>
+"""
+)
 
 
-def save_data(book, filename=FILE_NAME):
+def wrapped_prompt(name: str, completer=None):
+    value = prompt(HTML(f"<b>{name}</b>"), completer=completer)
+    if not value:
+        raise ValueError
+    return value
+
+
+def update_notes_completer(book: AddressBook):
+    notes_completer.words = book.notes.keys()
+
+
+def update_names_completer(book: AddressBook):
+    names_completer.words = book.data.keys()
+
+
+def update_tags_completer(book: AddressBook):
+    unique_tags = {tag.value for note in book.notes.values() for tag in note.tags}
+    tags_completer.words = list(unique_tags)
+
+
+@input_error(COMMAND_NAMES["add_contact"])
+def add_contact(book: AddressBook):
     """
-    Save the given book data to a file using pickle.
+    Adds a new contact to the given address book.
+
+    Prompts the user to enter a name and a phone number, creates a new record with the provided information,
+    and adds it to the address book. Also updates the names completer with the new contact.
 
     Args:
-        book (object): The book data to be saved.
-        filename (str, optional): The name of the file where the data will be saved. Defaults to FILE_NAME.
-
-    Returns:
-        None
+        book (AddressBook): The address book to which the new contact will be added.
     """
 
-    with open(filename, "wb") as f:
-        pickle.dump(book, f)
-
-
-def load_data(filename=FILE_NAME):
-    """
-    Load data from a file using pickle.
-
-    Args:
-        filename (str): The name of the file to load data from. Defaults to FILE_NAME.
-
-    Returns:
-        AddressBook: The loaded data if the file exists, otherwise a new AddressBook instance.
-
-    Raises:
-        FileNotFoundError: If the file does not exist.
-    """
-
-    try:
-        with open(filename, "rb") as f:
-            return pickle.load(f)
-    except FileNotFoundError:
-        return AddressBook()
-
-
-def input_error(command_name):
-    """
-    A decorator to handle errors for command functions in a phone book application.
-
-    Args:
-        command_name (str): The name of the command being decorated.
-
-    Returns:
-        function: The decorated function with error handling.
-
-    The decorator catches the following exceptions:
-        - ValueError: Raised when the input value is incorrect.
-        - IndexError: Raised when there are not enough arguments provided.
-        - KeyError: Raised when a contact is not found.
-
-    Error messages are customized based on the command name:
-        - "add": Error message for adding a contact with missing name or phone number.
-        - "change": Error message for changing a contact with missing name or phone number.
-        - "phone": Error message for retrieving a phone number with missing user name.
-        - "add-birthday": Error message for adding a birthday with missing user name or birthday.
-        - "show-birthday": Error message for showing a birthday with missing user name.
-        - "add-address": Error message for adding an address with missing user name or address.
-        - "change-address": Error message for changing an address with missing name or address.
-        - Default: Error message for invalid input.
-    """
-
-    def decorator(func):
-        def inner(*args, **kwargs):
-            try:
-                return func(*args, **kwargs)
-            except TagValidationError:
-                return 'Tag can only include latin chars, numbers and underscore ("_")'
-            except TagDuplicateError:
-                return 'This note alredy include entered tag.'
-            except TagNotFound:
-                return 'Entered tag not found.'
-            except ValueError as e:
-                match command_name:
-                    case ("add", "change"):
-                        print(
-                            f"Error in '{command_name}' command: Give me a name and a phone number."
-                        )
-                    case "phone":
-                        print(f"Error in '{command_name}' command: Enter user name.")
-                    case "add-birthday":
-                        print(
-                            f"Error in '{command_name}' command: Enter user name and birthday."
-                        )
-                    case "show-birthday":
-                        print(f"Error in '{command_name}' command: Enter user name.")
-                    case ("add-address", "change-address"):
-                        print(
-                            f"Error in '{command_name}' command: Enter contact name and address."
-                        )
-                    case "birthdays":
-                        print(
-                            f"Error in '{command_name}' command: Enter user lookup days."
-                        )
-                    case "add-phone":
-                        print(
-                            f"Error in '{command_name}' command: Enter contact name and phone."
-                        )
-                    case ("add-email"):
-                        print(
-                            f"Error in '{command_name}' command: Enter contact name and email."
-                        )
-                    case("change-email"):
-                        print(
-                            f"Error in '{command_name}' command: Enter contact name and email."
-                        )
-                    case ("add-note"):
-                        print(
-                            f"Error: '{e}'"
-                        )
-                    case("edit-note"):
-                        print(
-                            f"Error: '{e}'"
-                        )
-                    case "delete-note":
-                        print(
-                            f"Error in '{command_name}' command: Enter note title to delete"
-                        )
-
-                    case "find-notes":
-                        print(
-                            f"Error in '{command_name}' command: Enter query to search notes"
-                        )
-                    case _:
-                        print(f"Error in '{command_name}' command: Invalid input.")
-            except IndexError:
-
-                print(
-                    f"Error in '{command_name}' command: Not enough arguments provided."
-                )
-
-            except KeyError:
-                print(
-                    f"Error in '{command_name}' command: Contact {args[0]} not found."
-                )
-
-        return inner
-
-    return decorator
-
-
-def parse_input(user_input):
-    """
-    Parses the user input into a command and its arguments.
-
-    Args:
-        user_input (str): The input string provided by the user.
-
-    Returns:
-        tuple: A tuple where the first element is the command (str) and the remaining elements are the arguments (str).
-    """
-    cmd, *args = user_input.split()
-    cmd = cmd.strip().lower()
-    return cmd, *args
-
-
-@input_error(COMMAND_NAMES["add"])
-def add_contact(args, book: AddressBook):
-    """
-    Adds a new contact to the address book.
-
-    Args:
-        args (tuple): A tuple containing the name and phone number of the contact.
-        book (AddressBook): The address book to which the contact will be added.
-
-    Returns:
-        None
-    """
-    name, phone = args
+    name = wrapped_prompt("Enter name: ")
+    phone = wrapped_prompt("Enter phone (10 digits): ")
     record = Record(name)
     record.add_phone(phone)
     book.add_record(record)
+    update_names_completer(book)
 
 
-@input_error(COMMAND_NAMES["change"])
-def change_contact(args, book: AddressBook):
+@input_error(COMMAND_NAMES["add_address"])
+def add_address(book: AddressBook):
     """
-    Change the phone number of an existing contact in the address book.
+    Prompts the user to enter a name and an address, then adds the address to the corresponding record in the address book.
 
     Args:
-        args (tuple): A tuple containing the contact's name, the old phone number, and the new phone number.
-        book (AddressBook): The address book instance where the contact is stored.
-
-    Raises:
-        ValueError: If the contact is not found in the address book or the old phone number does not match.
-    """
-    name, old_phone, new_phone = args
-    record = book.find(name)
-    record.edit_phone(old_phone, new_phone)
-
-
-@input_error(COMMAND_NAMES["phone"])
-def get_phone(args, book: AddressBook):
-    """
-    Retrieve and print all phone numbers associated with a given name from the address book.
-
-    Args:
-        args (list): A list containing the name as the first element.
-        book (AddressBook): An instance of AddressBook to search for the name.
+        book (AddressBook): The address book where the contact records are stored.
 
     Returns:
         None
+
+    Raises:
+        None
+
+    Notes:
+        If the contact with the given name is not found in the address book, a message is printed indicating that the contact was not found.
     """
-    name = args[0]
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
     record: Record = book.find(name)
-    phones = record.get_all_phones()
-    print(f"Phones of {name}:")
-    print("\n".join(phone.value for phone in phones))
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+    address = wrapped_prompt("Enter address: ")  
+    record.add_address(address)
+        
 
 
-def get_all_contacts(book: AddressBook):
-    """
-    Print all contacts in a formatted table.
-
-    Args:
-        book (AddressBook): The address book containing contact records.
-    """
-    table = book.get_contacts_table()
-    print(table)
-
-
-@input_error(COMMAND_NAMES["add-birthday"])
-def add_birthday(args, book: AddressBook):
+@input_error(COMMAND_NAMES["add_birthday"])
+def add_birthday(book: AddressBook):
     """
     Add a birthday to a contact in the address book.
 
@@ -301,292 +118,596 @@ def add_birthday(args, book: AddressBook):
     Prints:
         A message indicating whether the birthday was added or if the contact was not found.
     """
-    name, birthday = args
-    record = book.find(name)
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    birthday = wrapped_prompt("Enter birthday (DD.MM.YYYY): ")
+    record: Record = book.find(name)
     if record:
         record.add_birthday(birthday)
-        print(f"Birthday {birthday} added to {name}.")
+        print(
+            f"\n{Fore.GREEN}Birthday {Fore.CYAN}{birthday} {Fore.GREEN}added to {Fore.CYAN}{name}{Fore.GREEN}.\n"
+        )
     else:
-        print(f"Contact {name} not found.")
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
 
 
-@input_error(COMMAND_NAMES["show-birthday"])
-def show_birthday(args, book: AddressBook):
+@input_error(COMMAND_NAMES["add_email"])
+def add_email(book: AddressBook):
     """
-    Display the birthday of a contact from the address book.
+    Adds an email to an existing contact in the address book.
+
+    Prompts the user to enter a name and an email address. If the contact with the given name
+    exists in the address book, the email is added to the contact's record. If the contact does
+    not exist, an error message is displayed.
 
     Args:
-        args (list): A list containing the name of the contact as the first element.
-        book (AddressBook): An instance of the AddressBook class.
-
-    Returns:
-        None: This function prints the birthday of the contact if found,
-              otherwise it prints a message indicating the contact was not found.
-    """
-    name = args[0]
-    record = book.find(name)
-    if record:
-        birthday = record.show_birthdays()
-        print(f"{name}'s birthday: {birthday}")
-    else:
-        print(f"Contact {name} not found.")
-
-
-@input_error(COMMAND_NAMES["birthdays"])
-def birthdays(args, book: AddressBook):
-    """
-    Prints the upcoming birthdays from the given AddressBook.
-
-    Args:
-        book (AddressBook): An instance of AddressBook containing contact information.
-
-    The function retrieves the upcoming birthdays from the AddressBook instance and prints them.
-    If there are no upcoming birthdays, it prints a message indicating so.
-    """
-
-    lookup_days = int(args[0])
-
-    upcoming = book.get_upcoming_birthdays(lookup_days)
-    if len(upcoming) > 0:
-        print("Upcoming birthdays:")
-        for birthday in upcoming:
-            print(f"{birthday['name']}: {birthday['next_upcoming_birthday']}")
-    else:
-        print("No upcoming birthdays.")
-
-
-@input_error(COMMAND_NAMES["add-email"])
-def add_email(args, book: AddressBook):
-    """Add an email to a contact."""
-
-    name, email = args
-    record = book.find(name)
-    if record:
-        record.add_email(email)
-        print(f"Email {email} added to {name}.")
-    else:
-        print(f"Contact {name} not found.")
-
-
-@input_error(COMMAND_NAMES["change-email"])
-def change_email(args, book: AddressBook):
-    """Change the email of a contact."""
-
-    name, email = args
-    record = book.find(name)
-    if record:
-        record.edit_email(email)
-    else:
-        print(f"Contact {name} not found.")
-
-
-@input_error(COMMAND_NAMES["add-address"])
-def add_address(args, book: AddressBook):
-    """Add an address to a contact."""
-    name = args[0]
-    address = " ".join(args[1:])
-    record = book.find(name)
-    if record:
-        record.add_address(address)
-        print(f"Address added to {name}.")
-    else:
-        print(f"Contact {name} not found.")
-
-
-@input_error(COMMAND_NAMES["change-address"])
-def change_address(args, book: AddressBook):
-    """Change the address of a contact."""
-    name = args[0]
-    address = " ".join(args[1:])
-    record = book.find(name)
-    if record:
-        record.edit_address(address)
-    else:
-        print(f"Contact {name} not found.")
-
-
-@input_error(COMMAND_NAMES["add-phone"])
-def add_phone(args, book: AddressBook):
-    """
-    Add a phone to a contact in the address book.
-
-    Args:
-        args (tuple): A tuple containing the name of the contact (str) and the phone (str).
         book (AddressBook): The address book where the contact is stored.
 
     Returns:
         None
-
-    Prints:
-        A message indicating whether the phone was added or if the contact was not found.
     """
-    name, phone = args
-    record = book.find(name)
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    email = wrapped_prompt("Enter email: ")
+    record: Record = book.find(name)
     if record:
-        record.add_phone(phone)
-        print(f"Phone {phone} added to {name}.")
+        record.add_email(email)
+        
     else:
-        print(f"Contact {name} not found.")
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
 
 
-@input_error(COMMAND_NAMES["add-note"])
-def add_note(args, book: AddressBook):
-    """Add a new note to the address book."""
+@input_error(COMMAND_NAMES["add_note"])
+def add_note(book: AddressBook):
+    """
+    Prompts the user to enter a note title and content, then adds the note to the provided AddressBook.
 
-    title = args[0]
-    content = " ".join(args[1:])
+    Args:
+        book (AddressBook): The address book to which the note will be added.
+
+    Returns:
+        None
+    """
+
+    title = wrapped_prompt("Enter note title: ")
+    content = wrapped_prompt("Enter note content: ")
     book.add_note(title, content)
+    update_notes_completer(book)
 
 
-@input_error(COMMAND_NAMES["show-notes"])
-def show_notes(book: AddressBook):
-    """Show all notes in a formatted table."""
-    table = book.get_notes_table()
-    print(table)
+@input_error(COMMAND_NAMES["add_phone"])
+def add_phone(book: AddressBook):
+    """
+    Adds a phone number to an existing contact in the address book.
+    Prompts the user to enter the name of the contact and the phone number to be added.
+    If the contact is found, the phone number is added to the contact's record.
+    If the contact is not found, an error message is displayed.
+    Args:
+        book (AddressBook): The address book containing the contacts.
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    record: Record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+
+    phone = wrapped_prompt("Enter phone (10 digits): ")
+    record.add_phone(phone)
+    print(
+        f"\n{Fore.GREEN}Phone {Fore.CYAN}{phone} {Fore.GREEN}added to {Fore.CYAN}{name}{Fore.GREEN}.\n"
+    )
 
 
-@input_error(COMMAND_NAMES["delete-note"])
-def delete_note(args, book: AddressBook):
-    """Delete a note by its title."""
-    
-    title = args[0]
+@input_error(COMMAND_NAMES["add_tag"])
+def add_tag(book: AddressBook):
+    """
+    Adds a tag to a note in the address book.
+    Prompts the user to enter the title of the note and the tag to be added.
+    If the note is found, the tag is added to the note and the tags completer is updated.
+    If the note is not found, an error message is printed.
+    Args:
+        book (AddressBook): The address book containing the notes.
+    Returns:
+        str: A message indicating the result of the operation.
+    """
+
+    note_title = wrapped_prompt("Enter note title: ", notes_completer)
+
+    note: Note | None = book.find_note_by_title(note_title)
+    if not note:
+        return print(f"\n{Fore.RED}Note {Fore.CYAN}{note_title} {Fore.RED}not found.\n")
+
+    tag = wrapped_prompt("Enter tag (#tag): ", completer=tags_completer)
+    note.add_tag(tag)
+    update_tags_completer(book)
+
+
+@input_error(COMMAND_NAMES["birthdays"])
+def birthdays(book: AddressBook):
+    """
+    Display upcoming birthdays from the address book.
+
+    This function prompts the user to enter the number of days to look ahead for upcoming birthdays.
+    It then retrieves and displays a table of upcoming birthdays within the specified number of days.
+
+    Args:
+        book (AddressBook): An instance of AddressBook containing contact information.
+
+    Returns:
+        None
+    """
+
+    lookup_days = wrapped_prompt("Enter days to lookup: ")
+    lookup_days = int(lookup_days)
+    upcoming = book.get_upcoming_birthdays(lookup_days)
+    upcoming_table = get_birthdays_table(upcoming)
+    if len(upcoming) > 0:
+        print(f"\n{upcoming_table}\n")
+    else:
+        print(f"\n{Fore.YELLOW}No upcoming birthdays.\n")
+
+
+@input_error(COMMAND_NAMES["change_phone"])
+def change_phone(book: AddressBook):
+    """
+    Change the phone number of an existing contact in the address book.
+
+    Prompts the user to enter the name of the contact whose phone number needs to be changed.
+    If the contact is found, it then prompts the user to enter the old phone number and the new phone number.
+    The old phone number is replaced with the new phone number in the contact's record.
+
+    Args:
+        book (AddressBook): The address book containing the contacts.
+
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+
+    record: Record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+    phones_completer = WordCompleter(
+        [phone.value for record in book.data.values() for phone in record.phones]
+    )
+    old_phone = wrapped_prompt("Enter old phone (10 digits): ", phones_completer)
+    new_phone = wrapped_prompt("Enter new phone (10 digits): ")
+    record.edit_phone(old_phone, new_phone)
+
+
+@input_error(COMMAND_NAMES["change_address"])
+def change_address(book: AddressBook):
+    """
+    Prompts the user to enter a name and a new address, then updates the address
+    of the corresponding contact in the provided AddressBook.
+
+    Args:
+        book (AddressBook): The address book containing the contacts.
+
+    Returns:
+        None
+
+    Raises:
+        None
+
+    Notes:
+        If the contact with the specified name is not found in the address book,
+        a message will be printed indicating that the contact was not found.
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    address = wrapped_prompt("Enter address: ")
+    record: Record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+
+    record.edit_address(address)
+
+
+@input_error(COMMAND_NAMES["change_email"])
+def change_email(book: AddressBook):
+    """
+    Change the email address of a contact in the address book.
+
+    Prompts the user to enter the name of the contact and the new email address.
+    If the contact is found in the address book, updates the contact's email address.
+    If the contact is not found, prints an error message.
+
+    Args:
+        book (AddressBook): The address book containing the contacts.
+
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    email = wrapped_prompt("Enter email: ")
+    record: Record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name} {Fore.RED}not found.\n")
+        return
+
+    record.edit_email(email)
+
+
+@input_error(COMMAND_NAMES["delete_contact"])
+def delete_contact(book: AddressBook):
+    """
+    Deletes a contact from the given address book.
+
+    Prompts the user to enter the name of the contact to delete and asks for confirmation.
+    If the user confirms, the contact is deleted from the address book.
+
+    Args:
+        book (AddressBook): The address book from which the contact will be deleted.
+
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    yes_no_completer = WordCompleter(["yes", "no"])
+    result = prompt(
+        HTML(f"\nAre you sure you want to delete <cyan>{name}</cyan> (yes/no)?: "),
+        completer=yes_no_completer,
+    )
+    if result.lower() == "yes" or result.lower() == "y":
+        book.delete(name)
+        update_names_completer(book)
+
+
+@input_error(COMMAND_NAMES["delete_note"])
+def delete_note(book: AddressBook):
+    """
+    Deletes a note from the given AddressBook by its title.
+
+    Args:
+        book (AddressBook): The address book instance from which the note will be deleted.
+
+    Prompts the user to enter the title of the note to be deleted and removes the note with the matching title from the address book.
+    """
+
+    title = wrapped_prompt("Enter note title: ", notes_completer)
     book.delete_note_by_title(title)
 
 
-@input_error(COMMAND_NAMES["edit-note"])
-def edit_note(args, book: AddressBook):
-    """Edit an existing note."""
+@input_error(COMMAND_NAMES["edit_note"])
+def edit_note(book: AddressBook):
+    """
+    Edits the content of an existing note in the AddressBook.
 
-    title = args[0]
-    new_content = " ".join(args[1:])
+    Prompts the user to enter the title of the note they wish to edit and the new content for the note.
+    Updates the note in the AddressBook with the new content and prints the updated note.
+
+    Args:
+        book (AddressBook): The AddressBook instance containing the notes.
+
+    Returns:
+        None
+    """
+
+    title = wrapped_prompt("Enter note title: ", notes_completer)
+    new_content = wrapped_prompt("Enter new content: ")
     book.edit_note(title, new_content)
+    new_note = book.find_note_by_title(title)
+    dict_note = {new_note.title: new_note}
+    print(f"{Fore.RESET}{get_notes_table(dict_note)}\n")
 
 
-@input_error(COMMAND_NAMES["find-notes"])
-def find_notes(args, book: AddressBook):
-    """Search notes by query."""
+def find_note_by_title(book: AddressBook):
+    """
+    Find and display a note by its title from the given address book.
 
-    query = " ".join(args)
-    book.find_notes(query)
+    Args:
+        book (AddressBook): The address book instance to search for the note.
 
+    Prompts the user to enter the title of the note they are looking for.
+    If the note is found, it prints the note details in a formatted table.
+    If the note is not found, it prints a message indicating that the note was not found.
+    """
 
-@input_error(COMMAND_NAMES["add-tag"])
-def add_tag(args, book: AddressBook) -> str:
-    note_title, tag = args
-    note: Note | None = book.find_note_by_title(note_title)
+    note_title = wrapped_prompt("Enter note title: ", notes_completer)
+    note = book.find_note_by_title(note_title)
     if not note:
-        return 'Note not found.'
-    note.add_tag(tag)
-    return f'Tag {tag} added to note {note_title}.'
+        print(f"\n{Fore.RED}Note not found.\n")
+    else:
+        dict_note = {note.title: note}
+        print(f"\n{get_notes_table(dict_note)}\n")
 
-@input_error(COMMAND_NAMES["remove-tag"])
-def remove_tag(args, book: AddressBook) -> str:
-    note_title, tag = args
-    note: Note | None = book.find_note_by_title(note_title)
-    if not note:
-        return 'Note not found'
-    note.remove_tag(tag)
-    return f"Tag '{tag}' removed from note '{note.title}'"
 
-# @input_error(COMMAND_NAMES['find-notes-by-tag'])
-def find_notes_by_tag(args, book: AddressBook) -> str:
-    tag = args[0]
-    notes: list[Note]= book.find_notes_by_tag(tag)
+def find_contact_by_name(book: AddressBook):
+    """
+    Find and display a contact by name from the given address book.
+
+    Args:
+        book (AddressBook): The address book to search within.
+
+    Prompts the user to enter a name and searches for the corresponding contact
+    in the address book. If the contact is found, it displays the contact's details
+    in a formatted table. If the contact is not found, it prints a message indicating
+    that the contact was not found.
+    """
+
+    name = wrapped_prompt("Enter name: ", names_completer)
+    record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact not found.\n")
+    else:
+        dict_record = {record.name: record}
+        print(f"\n{get_contacts_table(dict_record)}\n")
+
+
+@input_error(COMMAND_NAMES["find_notes"])
+def find_notes(book: AddressBook):
+    """
+    Search for notes in the given AddressBook that match the user's query.
+
+    Args:
+        book (AddressBook): The address book containing notes to search.
+
+    Prompts the user to enter a query string and searches for notes in the
+    address book that match the query. If no matching notes are found, it
+    prints a message indicating that no notes were found. If matching notes
+    are found, it prints the notes in a formatted table.
+
+    Returns:
+        None
+    """
+
+    query = wrapped_prompt("Enter query: ")
+    notes = book.find_notes(query)
     if not notes:
-        print(f'Any note linked to tag "{tag}"')
-    for note in notes:
-        print(note)
+        print(f"\n{Fore.RED}No notes found matching {Fore.CYAN}{query}{Fore.RED}.\n")
+    else:
+        print(f"\n{get_notes_table(notes)}\n")
 
+
+@input_error(COMMAND_NAMES["find_notes_by_tag"])
+def find_notes_by_tag(book: AddressBook):
+    """
+    Find and display notes associated with a specific tag in the address book.
+    Args:
+        book (AddressBook): The address book instance containing notes.
+    Prompts the user to enter a tag and searches for notes linked to that tag.
+    If notes are found, they are displayed in a formatted table. If no notes
+    are found, a message indicating the absence of notes linked to the tag is displayed.
+    """
+
+    tag = wrapped_prompt("Enter tag (#tag): ", tags_completer)
+    notes: list[Note] = book.find_notes_by_tag(tag)
+    if not notes:
+        print(f"\n{Fore.RED}No notes linked to tag {Fore.CYAN}{tag}{Fore.RED}.\n")
+    else:
+        print(f"\n{get_notes_table(notes)}\n")
+
+
+@input_error(COMMAND_NAMES["show_phone"])
+def show_phone(book: AddressBook):
+    """
+    Prompt the user to enter a name, find the corresponding record in the address book,
+    retrieve all phone numbers associated with that record, and print them in a table format.
+
+    Args:
+        book (AddressBook): The address book to search for the record.
+
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    record: Record = book.find(name)
+    if not record:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name}{Fore.RED} not found.\n")
+        return
+    phones = record.get_all_phones()
+    phones_tale = get_phone_table(phones)
+    print(phones_tale)
+
+
+def get_all_contacts(book: AddressBook):
+    """
+    Retrieve and display all contacts from the given address book.
+    Args:
+        book (AddressBook): The address book from which to retrieve contacts.
+    Returns:
+        None: This function prints the contacts or a message if no contacts are found.
+    """
+
+    contacts = book.get_contacts()
+    if not contacts:
+        print(f"\n{Fore.RED}No contacts found.\n")
+    else:
+        print(f"\n{get_contacts_table(contacts)}\n")
+
+
+@input_error(COMMAND_NAMES["remove_tag"])
+def remove_tag(book: AddressBook):
+    """
+    Removes a tag from a note in the address book.
+
+    Args:
+        book (AddressBook): The address book containing the notes.
+
+    Returns:
+        str: A message indicating whether the note was found or not.
+
+    Prompts:
+        - Prompts the user to enter the title of the note.
+        - Prompts the user to enter the tag to be removed from the note.
+    """
+
+    note_title = wrapped_prompt("Enter note title: ", notes_completer)
+    note: Note | None = book.find_note_by_title(note_title)
+    tags_completer = WordCompleter([tag.value for tag in note.tags])
+    tag = wrapped_prompt("Enter tag (#tag): ", tags_completer)
+    if not note:
+        return "Note not found"
+    note.remove_tag(tag)
+
+
+@input_error(COMMAND_NAMES["show_birthday"])
+def show_birthday(book: AddressBook):
+    """
+    Display the birthday information of a contact from the address book.
+
+    Prompts the user to enter a name, searches for the corresponding record in the
+    provided AddressBook, and if found, prints the birthday information in a table format.
+    If the contact is not found, an error message is displayed.
+
+    Args:
+        book (AddressBook): The address book containing contact records.
+
+    Returns:
+        None
+    """
+
+    name = wrapped_prompt("Enter name: ", completer=names_completer)
+    record: Record = book.find(name)
+    if record:
+        birthday_table = get_birthday_table(record)
+        print(f"\n{birthday_table}\n")
+    else:
+        print(f"\n{Fore.RED}Contact {Fore.CYAN}{name}{Fore.RED} not found.")
+
+
+@input_error(COMMAND_NAMES["all_notes"])
+def all_notes(book: AddressBook):
+    """
+    Display the notes from the given AddressBook.
+
+    Args:
+        book (AddressBook): An instance of AddressBook containing notes.
+
+    Returns:
+        None
+    """
+
+    table = book.get_notes()
+    print(f"\n{get_notes_table(table)}\n")
 
 
 def main():
     """
-    The main function of the assistant bot. It initializes the AddressBook and
-    continuously prompts the user for commands until the user decides to exit.
+    Main function to run the command-line interface for the contact book application.
+
+    This function initializes the console, loads data, updates completers, and starts a prompt session
+    to accept user commands. It handles various commands to manage contacts, addresses, birthdays, emails,
+    notes, and tags. The function also handles saving data and exiting the application gracefully.
 
     Commands:
-        - "close" or "exit": Exits the bot.
-        - "hello": Greets the user.
-        - "add": Adds a new contact to the address book.
-        - "change": Changes an existing contact in the address book.
-        - "phone": Retrieves the phone number of a contact.
-        - "all": Displays all contacts in the address book.
-        - "add-birthday": Adds a birthday to a contact.
-        - "show-birthday": Shows the birthday of a contact.
-        - "birthdays": Lists upcoming birthdays.
-        - "add-address": Adds address to a contact.
-        - "change-address": Change exiting address to a contact.
-        - "add-phone": Adds a phone to a contact.
-        - "add-tag": Adds tag to a note.
-        - "help": Displays a list of available commands.
+    - help: Display available commands.
+    - close, exit: Save data and exit the application.
+    - add: Add a new contact.
+    - add_address: Add an address to a contact.
+    - add_birthday: Add a birthday to a contact.
+    - add_email: Add an email to a contact.
+    - add_note: Add a note.
+    - add_phone: Add a phone number to a contact.
+    - add_tag: Add a tag to a note.
+    - all: Display all contacts.
+    - birthdays: Display upcoming birthdays.
+    - change_phone: Change contact details.
+    - change_address: Change a contact's address.
+    - change_email: Change a contact's email.
+    - delete_contact: Delete a contact.
+    - delete_note: Delete a note.
+    - edit_note: Edit a note.
+    - find_contact_by_name: Find a contact by name.
+    - find_note_by_title: Find a note by title.
+    - find_notes: Find notes.
+    - find_notes_by_tag: Find notes by tag.
+    - phone: Get a contact's phone number.
+    - remove_tag: Remove a tag from a note.
+    - show_birthday: Show a contact's birthday.
+    - all_notes: Show all notes.
 
-    If an invalid command is entered, an error message is displayed and the user
-    is prompted to type 'help' to see all available commands.
+    Exceptions:
+    - KeyboardInterrupt: Save data and exit on keyboard interrupt.
+    - EOFError: Save data and exit on end-of-file error.
     """
 
     try:
+        clear_console()
         book = load_data()
-        print("Welcome to the assistant bot!")
+        update_notes_completer(book)
+        update_names_completer(book)
+        update_tags_completer(book)
+        print_formatted_text(welcome_message, style=style)
+        session = PromptSession()  # session for in memory history
         while True:
-            user_input = input(f"{Style.RESET_ALL}Enter a command: ")
-            command, *args = parse_input(user_input)
+            command = session.prompt(
+                HTML("<b><ansibrightcyan>Enter a command:</ansibrightcyan></b> "),
+                completer=commands_completer,
+            )
             if command in COMMAND_NAMES:
                 match command:
+                    case "help":
+                        print(COMMANDS)
                     case "close" | "exit":
                         save_data(book)
                         print("Good bye!")
                         break
-                    case "hello":
-                        print("How can I help you?")
-                    case "add":
-                        add_contact(args, book)
-                    case "change":
-                        change_contact(args, book)
-                    case "phone":
-                        get_phone(args, book)
-                    case "all":
+                    case "add_contact":
+                        add_contact(book)
+                    case "add_address":
+                        add_address(book)
+                    case "add_birthday":
+                        add_birthday(book)
+                    case "add_email":
+                        add_email(book)
+                    case "add_note":
+                        add_note(book)
+                    case "add_phone":
+                        add_phone(book)
+                    case "add_tag":
+                        add_tag(book)
+                    case "all_contacts":
                         get_all_contacts(book)
-                    case "add-birthday":
-                        add_birthday(args, book)
-                    case "show-birthday":
-                        show_birthday(args, book)
                     case "birthdays":
-                        birthdays(args, book)
-                    case "add-email":
-                        add_email(args, book)
-                    case "change-email":
-                        change_email(args, book)
-                    case "add-address":
-                        add_address(args, book)
-                    case "change-address":
-                        print(change_address(args, book))
-                    case "add-phone":
-                        add_phone(args, book)
-                    case "add-note":
-                        add_note(args, book)
-                    case "show-notes":
-                        show_notes(book)
-                    case "delete-note":
-                        delete_note(args, book)
-                    case "edit-note":
-                        edit_note(args, book)
-                    case "find-notes":
-                        find_notes(args, book)
-                    case "add-tag":
-                        print(add_tag(args, book))
-                    case "remove-tag":
-                        print(remove_tag(args, book))
-                    case "find-notes-by-tag":
-                        find_notes_by_tag(args, book)
-                    case "help":
-                        print(COMMANDS)
+                        birthdays(book)
+                    case "change_phone":
+                        change_phone(book)
+                    case "change_address":
+                        print(change_address(book))
+                    case "change_email":
+                        change_email(book)
+                    case "delete_contact":
+                        delete_contact(book)
+                    case "delete_note":
+                        delete_note(book)
+                    case "edit_note":
+                        edit_note(book)
+                    case "find_contact_by_name":
+                        find_contact_by_name(book)
+                    case "find_note_by_title":
+                        find_note_by_title(book)
+                    case "find_notes":
+                        find_notes(book)
+                    case "find_notes_by_tag":
+                        find_notes_by_tag(book)
+                    case "show_phone":
+                        show_phone(book)
+                    case "remove_tag":
+                        remove_tag(book)
+                    case "show_birthday":
+                        show_birthday(book)
+                    case "all_notes":
+                        all_notes(book)
             else:
                 print(
-                    f"{Fore.RED}Invalid command.\n{Style.RESET_ALL}To see all commands available type 'help'"
+                    f"\n{Fore.RED}Invalid command.\n{Fore.BLUE}To see all commands available type 'help'\n"
                 )
     except (KeyboardInterrupt, EOFError):
         save_data(book)
         print("\nGood bye!")
+    except Exception:
+        save_data(book)
 
 
 if __name__ == "__main__":

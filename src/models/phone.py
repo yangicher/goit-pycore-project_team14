@@ -28,4 +28,7 @@ class Phone(Field):
             self.value = value
         else:
             self.value = None
-            print("Invalid phone number. Please enter a 10-digit number.")
+            raise ValueError("Invalid phone number. Please enter a 10-digit number.")
+        
+    def __str__(self):
+        return f"+({self.value[:3]})-{self.value[3:6]}-{self.value[6:8]}-{self.value[8:10]}"

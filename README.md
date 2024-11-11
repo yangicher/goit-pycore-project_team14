@@ -42,40 +42,68 @@ python src/main.py
 
 The assistant bot supports the following commands:
 
-- hello: Greet the assistant.
-- add <name> <phone>: Add a new contact.
-- change <name> <old_phone> <new_phone>: Change the phone number of a contact.
-- phone <name>: Get the phone number of a contact.
-- all: List all contacts.
-- add-birthday <name> <birthday>: Add a birthday to a contact.
-- show-birthday: <name> : Show the birthday of a contact.
-- birthdays: <days_lookup> Show all birthdays from today to days_lookup.
-- add-note <title> <content>: Add a new note.
-- show-notes: Show all notes.
-- delete-note <title>: Delete a note by title.
-- edit-note <title> <new_content>: Edit an existing note.
-- find-notes <query>: Search notes by title or content.
-- find-notes-by-tag <tag>: Searching notes by entered tag.
-- add-email <name> <email>: Add an email to a contact.
-- change-email <name> <email>: Change the email of a contact.
-- add-address <name> <address>: Add an address to a contact.
-- change-address <name> <address>: Change an address for a contact
-- add-phone <name> <phone>: Add a phone to a contact.
-- add-tag <note title> <tag>: Add tag to a note.
-- remove-tag <note title> <tag>: Removing exiting tag from note.
-- help: List available commands.
-- close/exit: Close the assistant.
+- `hello`: Greet the assistant.
+- `add_contact <name> <phone>`: Add a new contact.
+- `change_phone <name> <old_phone> <new_phone>`: Change the phone number of a contact.
+- `show_phone <name>`: Get the phone number of a contact.
+- `all_contacts`: List all contacts.
+- `add_birthday <name> <birthday>`: Add a birthday to a contact.
+- `show_birthday <name>`: Show the birthday of a contact.
+- `birthdays <days_lookup>`: Show all birthdays from today to the specified number of days.
+- `add_email <name> <email>`: Add an email to a contact.
+- `change_email <name> <email>`: Change the email of a contact.
+- `add_address <name> <address>`: Add an address to a contact.
+- `change_address <name> <address>`: Change the address of a contact.
+- `add_phone <name> <phone>`: Add a phone to a contact.
+- `add_note <title> <content>`: Add a new note.
+- `edit_note <title> <new_content>`: Edit an existing note.
+- `delete_note <title>`: Delete a note by title.
+- `find_note_by_title <title>`: Find a note by its title.
+- `find_notes <query>`: Search notes by title or content.
+- `find_notes_by_tag <tag>`: Search notes by tag.
+- `add_tag <note_title> <tag>`: Add a tag to a note.
+- `remove_tag <note_title> <tag>`: Remove a tag from a note.
+- `all_notes`: Show all notes.
+- `help`: List available commands.
+- `close`/`exit`: Close the assistant.
 
 ## Example
 
 ```sh
 $ python src/main.py
-Welcome to the assistant bot!
-Enter a command: add John 1234567890
-Contact John added.
-Enter a command: phone John
-Phones of John:
-1234567890
+Welcome to the Address Book Assistant!
+Type 'help' to see the list of available commands.
+Enter a command: add_contact
+Enter name: John Doe
+Enter phone (10 digits): 1234567890
+Contact John Doe added.
+Enter a command: show_phone
+Enter name: John Doe
+Phones of John Doe:
++(123)-456-78-90
+Enter a command: add_email
+Enter name: John Doe
+Enter email: john@example.com
+Email john@example.com added to John Doe.
+Enter a command: add_address
+Enter name: John Doe
+Enter address: 123 Main St, Anytown
+Address added to John Doe.
+Enter a command: add_birthday
+Enter name: John Doe
+Enter birthday (DD.MM.YYYY): 01.01.1990
+Birthday 01.01.1990 added to John Doe.
+Enter a command: add_note
+Enter note title: Meeting
+Enter note content: Discuss project updates
+Note Meeting added successfully.
+Enter a command: find_note_by_title
+Enter note title: Meeting
++---------+----------------------+----------------------+---------------------+
+| Title   | Content              | Tags                 | Created             |
++---------+----------------------+----------------------+---------------------+
+| Meeting | Discuss project ...  |                      | 2023-10-10 10:00:00 |
++---------+----------------------+----------------------+---------------------+
 Enter a command: exit
 Good bye!
 ```

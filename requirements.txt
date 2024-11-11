@@ -1,2 +1,4 @@
 colorama==0.4.6
 prettytable~=3.12.0
+prompt_toolkit==3.0.48
+wcwidth==0.2.13

@@ -1,3 +1,4 @@
+from colorama import Fore
 from datetime import datetime
 from models.field import Field
 from models.tag import Tag, TagDuplicateError, TagNotFound, auto_add_hashtag
@@ -53,10 +54,10 @@ class Note(Field):
     def add_tag(self, new_tag: str) -> None:
         new_tag = auto_add_hashtag(new_tag)
         for tag in self.tags:
-            print(f'{tag.value} ||| {new_tag}')
             if tag.value == new_tag:
                 raise TagDuplicateError()
         self.tags.append(Tag(new_tag))
+        print(f"\n{Fore.GREEN}Tag {Fore.CYAN}{new_tag} {Fore.GREEN}added to note {Fore.CYAN}{self.title}{Fore.GREEN}.\n")
 
     def is_tag_exists(self, tag: str) -> bool:
         tag = auto_add_hashtag(tag)
@@ -67,6 +68,7 @@ class Note(Field):
         if not self.is_tag_exists(tag_to_remove):
             raise TagNotFound()
         self.tags = [tag for tag in self.tags if tag.value != tag_to_remove]
+        print(f"\n{Fore.GREEN}Tag {Fore.CYAN}{tag_to_remove} {Fore.GREEN}removed from note {Fore.CYAN}{self.title}{Fore.GREEN}.\n")
 
     def __get_tags_str(self):
         result_str = '\nTags:'
